@@ -21,7 +21,7 @@
 
 #include <winsock2.h>
 #include "rabe/rabe.h"
-#include "ac17gcm.h"
+#include "hybrid-cp-abe.h"
 
 using namespace std;
 using namespace CryptoPP;
