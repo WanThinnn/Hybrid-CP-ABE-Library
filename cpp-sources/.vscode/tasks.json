@@ -32,7 +32,7 @@
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build executable for ac17_gcm256",
+            "label": "C/C++: cl.exe build executable for hybrid CP-ABE",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -52,11 +52,11 @@
                 "$msCompile"
             ],
             "group": "build",
-            "detail": "Task to build executable for ac17_gcm256."
+            "detail": "Task to build executable for hybrid CP-ABE."
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build static library",
+            "label": "C/C++: cl.exe build static library for hybrid CP-ABE",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -75,11 +75,11 @@
                 "kind": "build",
                 "isDefault": false
             },
-            "detail": "Task to build static library."
+            "detail": "Task to build static library for hybrid CP-ABE."
         },
         {
             "type": "shell",
-            "label": "C/C++: lib.exe create static library",
+            "label": "C/C++: lib.exe create static library for hybrid CP-ABE",
             "command": "lib.exe",
             "args": [
                 "/OUT:${fileDirname}\\${fileBasenameNoExtension}.lib",
@@ -102,7 +102,7 @@
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build dynamic linking library (DLL)",
+            "label": "C/C++: cl.exe build dynamic linking library (DLL) for hybrid CP-ABE",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -131,7 +131,7 @@
                 "kind": "build",
                 "isDefault": false
             },
-            "detail": "C/C++: cl.exe build dynamic linking library (DLL)"
+            "detail": "C/C++: cl.exe build dynamic linking library (DLL) for hybrid CP-ABE"
         },
        
     ]
