@@ -1,5 +1,5 @@
-# CPABE-AC17-Scheme
-Ciphertext Policy Attribute Based Encryption - AC17 Scheme Library for C/C++ in Windows
+# Hybrid CP-ABE Library
+Hybrid Ciphertext Policy Attribute Based Encryption Library for C/C++ in Windows
 
 ## Prerequisites
 
@@ -42,44 +42,70 @@ Ciphertext Policy Attribute Based Encryption - AC17 Scheme Library for C/C++ in 
                 "/I${workspaceFolder}\\include",
                 "/link",
                 "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
-                "librabe_ffi.lib", // Rabe FFI Library
-                "cryptlib.lib", //CryptoPP890 Library
-                "bcrypt.lib", // Provides cryptographic functions (Windows system libraries)
-                "advapi32.lib", // Provides advanced API services including security and registry functions (Windows system libraries)
-                "ntdll.lib", // Windows system libraries
+                "librabe_ffi.lib",
+                "cryptlib.lib",
+                "bcrypt.lib",
+                "advapi32.lib",
+                "ntdll.lib",
+                "Ws2_32.lib",
                 "/MACHINE:X64"
             ],
-            "problemMatcher": ["$msCompile"],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build",
             "detail": "Task to build executable."
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build static library",
+            "label": "C/C++: cl.exe build executable for hybrid CP-ABE",
             "command": "cl.exe",
             "args": [
-                "/MD",  // Use static runtime
+                "/MD",
                 "/GS",
                 "/O2",
                 "/Zi",
                 "/EHsc",
-                "/c",  // Compile without linking
+                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "${file}",
+                "/I${workspaceFolder}\\include",
+                "/link",
+                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "libac17_gcm256.lib",
+                "/MACHINE:X64"
+            ],
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build",
+            "detail": "Task to build executable for hybrid CP-ABE."
+        },
+        {
+            "type": "shell",
+            "label": "C/C++: cl.exe build static library for hybrid CP-ABE",
+            "command": "cl.exe",
+            "args": [
+                "/MD",
+                "/GS",
+                "/O2",
+                "/Zi",
+                "/EHsc",
+                "/c",
                 "${file}",
                 "/I${workspaceFolder}\\include"
             ],
-            "problemMatcher": ["$msCompile"],
+            "problemMatcher": [
+                "$msCompile"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": false
             },
-            "detail": "Task to build static library."
+            "detail": "Task to build static library for hybrid CP-ABE."
         },
         {
             "type": "shell",
-            "label": "C/C++: lib.exe create static library",
+            "label": "C/C++: lib.exe create static library for hybrid CP-ABE",
             "command": "lib.exe",
             "args": [
                 "/OUT:${fileDirname}\\${fileBasenameNoExtension}.lib",
@@ -91,7 +117,9 @@ Ciphertext Policy Attribute Based Encryption - AC17 Scheme Library for C/C++ in 
                 "advapi32.lib",
                 "ntdll.lib"
             ],
-            "problemMatcher": ["$msCompile"],
+            "problemMatcher": [
+                "$msCompile"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": false
@@ -100,7 +128,7 @@ Ciphertext Policy Attribute Based Encryption - AC17 Scheme Library for C/C++ in 
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build dynamic linking library (DLL)",
+            "label": "C/C++: cl.exe build dynamic linking library (DLL) for hybrid CP-ABE",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -108,30 +136,33 @@ Ciphertext Policy Attribute Based Encryption - AC17 Scheme Library for C/C++ in 
                 "/O2",
                 "/Zi",
                 "/EHsc",
-                "/LD",  // for build DLL
-                "/DBUILD_DLL", // define macro BUILD_DLL
+                "/LD",
+                "/DBUILD_DLL",
                 "/Fe:${fileDirname}\\${fileBasenameNoExtension}.dll",
                 "${file}",
                 "/I${workspaceFolder}\\include",
                 "/link",
                 "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
-                "librabe_ffi.lib", // Rabe FFI Library
-                "cryptlib.lib", //CryptoPP890 Library
-                "bcrypt.lib", // Provides cryptographic functions (Windows system libraries)
-                "advapi32.lib", // Provides advanced API services including security and registry functions (Windows system libraries)
-                "ntdll.lib", // Windows system libraries
+                "librabe_ffi.lib",
+                "cryptlib.lib",
+                "bcrypt.lib",
+                "advapi32.lib",
+                "ntdll.lib",
                 "/MACHINE:X64"
             ],
-            "problemMatcher": ["$msCompile"],
+            "problemMatcher": [
+                "$msCompile"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": false
             },
-            "detail": "C/C++: cl.exe build dynamic linking library (DLL)"
+            "detail": "C/C++: cl.exe build dynamic linking library (DLL) for hybrid CP-ABE"
         },
+       
     ]
 }
-  ```
+```
 
 4. Build the project:
     - Open Visual Studio Code and open your project.
@@ -153,18 +184,18 @@ cd CPABE-AC17-Scheme/demo
 The usage of the executable is as follows:
 ```sh
 Usage: ac17_cli_app.exe [setup|genkey|encrypt|decrypt]
-Usage: ac17_cli_app.exe setup <path_to_save_file> <format:HEX/Base64/JsonText>
-Usage: ac17_cli_app.exe genkey <public_key_file> <master_key_file> <attributes> <private_key_file> <format:HEX/Base64/JsonText>
-Usage: ac17_cli_app.exe encrypt <public_key_file> <plaintext_file> <policy> <ciphertext_file> <format:HEX/Base64/JsonText>
-Usage: ac17_cli_app.exe decrypt <public_key_file> <private_key_file> <ciphertext_file> <recovertext_file> <format:HEX/Base64/JsonText>
+Usage: ac17_cli_app.exe setup <path_to_save_file>
+Usage: ac17_cli_app.exe genkey <public_key_file> <master_key_file> <attributes> <private_key_file>
+Usage: ac17_cli_app.exe encrypt <public_key_file> <plaintext_file> <policy> <ciphertext_file>
+Usage: ac17_cli_app.exe decrypt <public_key_file> <private_key_file> <ciphertext_file> <recovertext_file>
 ```
 
 Example commands:
 ```sh
 .\ac17_cli_app.exe setup "test_case" Base64
-.\ac17_cli_app.exe genkey "test_case/public_key.key" "test_case/master_key.key" "A B C" "test_case/private_key.key" Base64
-.\ac17_cli_app.exe encrypt "test_case/public_key.key" "test_case/plaintext.txt" "((A and C) or E)" "test_case/ciphertext.txt" Base64
-.\ac17_cli_app.exe decrypt "test_case/public_key.key" "test_case/private_key.key" "test_case/ciphertext.txt" "test_case/recovertext.txt" Base64
+.\ac17_cli_app.exe genkey "test_case/public_key.key" "test_case/master_key.key" "A B C" "test_case/private_key.key"
+.\ac17_cli_app.exe encrypt "test_case/public_key.key" "test_case/plaintext.txt" "((A and C) or E)" "test_case/ciphertext.txt"
+.\ac17_cli_app.exe decrypt "test_case/public_key.key" "test_case/private_key.key" "test_case/ciphertext.txt" "test_case/recovertext.txt"
 ```
 ### Integrating the Library
 After building the library, you can integrate it into any program on Windows. Here are the steps to include the library in your project.
