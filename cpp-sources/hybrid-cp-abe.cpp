@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <cstring>
 
-#include <winsock2.h>
+// #include <winsock2.h>
 #include "rabe/rabe.h"
 #include "hybrid-cp-abe.h"
 
