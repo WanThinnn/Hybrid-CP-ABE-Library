@@ -1,5 +1,5 @@
 # Hybrid CP-ABE Library
-Hybrid Ciphertext Policy Attribute Based Encryption Library for C/C++ in Windows
+Hybrid Ciphertext Policy Attribute Based Encryption Library for C/C++ in Windows/Linux
 
 ## Prerequisites
 
@@ -15,11 +15,12 @@ Hybrid Ciphertext Policy Attribute Based Encryption Library for C/C++ in Windows
     https://github.com/WanThinnn/Hybrid-CP-ABE-Library.git
     ```
 2. Navigate to the project directory:
-    ```sh
+_Using x64 Native Tools Command Prompt for VS 2022_
+   ```sh
     cd Hybrid-CP-ABE-Library/cpp-sources
     code . #for open projects Visual Studio Code
     ```
-3. Configure `tasks.json` to build the project using `cl.exe`:
+4. Configure `tasks.json` to build the project using `cl.exe`:
     - Create or open the `.vscode` folder in your project directory.
     - Create a `tasks.json` file inside the `.vscode` folder with the following content:
 
@@ -169,6 +170,141 @@ Hybrid Ciphertext Policy Attribute Based Encryption Library for C/C++ in Windows
     - Press `Ctrl+Shift+B` to run the configured build task.
     - If everything is configured correctly, your program will be compiled using `cl.exe`.
 
+
+## Building for Linux (Ubuntu 22.04)
+1. Clone the repository:
+    ```sh
+    https://github.com/WanThinnn/Hybrid-CP-ABE-Library.git
+    ```
+2. Navigate to the project directory:
+    ```sh
+    cd Hybrid-CP-ABE-Library/cpp-sources
+    code . #for open projects Visual Studio Code
+    ```
+3. Configure `tasks.json` to build the project using `g++`:
+    - Create or open the `.vscode` folder in your project directory.
+    - Create a `tasks.json` file inside the `.vscode` folder with the following content:
+ ```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "Build executable (cryptopp/rabe_ffi)",
+            "command": "g++",
+            "args": [
+                "-O3",
+                "-g2",
+                "-Wall",
+                "-I${workspaceFolder}/include",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-L${workspaceFolder}/lib/static-lib",
+                "-lcryptopp",
+                "-lrabe_ffi"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Build executable linking cryptopp and rabe_ffi."
+        },
+        {
+            "type": "shell",
+            "label": "Build executable (hybrid CP-ABE)",
+            "command": "g++",
+            "args": [
+                "-O2",
+                "-g",
+                "-Wall",
+                "-I${workspaceFolder}/include",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-L${workspaceFolder}/lib/static-lib",
+                "-lhybrid-cp-abe"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Build executable linking fat library libhybrid-cp-abe.a."
+        },
+        {
+            "type": "shell",
+            "label": "Compile source for hybrid CP-ABE (1/3)",
+            "command": "g++",
+            "args": [
+                "-O2",
+                "-g",
+                "-Wall",
+                "-c",
+                "${file}",
+                "-I${workspaceFolder}/include",
+                "-fPIC",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}.o"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Compile source into object file."
+        },
+        {
+            "type": "shell",
+            "label": "Extract dependency objects (2/3)",
+            "command": "bash",
+            "args": [
+                "-c",
+                "rm -rf \"${workspaceFolder}/tmp_extracted\" && mkdir -p \"${workspaceFolder}/tmp_extracted\" && cd \"${workspaceFolder}/lib/static-lib\" && ar x libcryptopp.a && ar x librabe_ffi.a && mv *.o \"${workspaceFolder}/tmp_extracted/\""
+            ],
+            "problemMatcher": [],
+            "group": "build",
+            "detail": "Extract .o files from libcryptopp.a and librabe_ffi.a."
+        },
+        {
+            "type": "shell",
+            "label": "Create fat static library for hybrid CP-ABE (3/3)",
+            "command": "bash",
+            "args": [
+                "-c",
+                "ar rcs \"${workspaceFolder}/lib/static-lib/libhybrid-cp-abe.a\" \"${fileDirname}/${fileBasenameNoExtension}.o\" \"${workspaceFolder}/tmp_extracted/\"*.o && rm -rf \"${workspaceFolder}/tmp_extracted\""
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Combine object files into libhybrid-cp-abe.a."
+        },
+        {
+            "type": "shell",
+            "label": "Build shared library for hybrid CP-ABE",
+            "command": "g++",
+            "args": [
+                "-O2",
+                "-g",
+                "-Wall",
+                "-fPIC",
+                "-DBUILD_DLL",
+                "-I${workspaceFolder}/include",
+                "${file}",
+                "-shared",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}.so",
+                "-L${workspaceFolder}/lib/static-lib",
+                "-lhybrid-cp-abe",
+                "-lcryptopp",
+                "-lrabe_ffi"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Build shared library (.so) for hybrid CP-ABE."
+        }
+    ]
+}
+
+```
+4. Build the project:
+    - Open Visual Studio Code and open your project.
+    - Press `Ctrl+Shift+B` to run the configured build task.
+    - If everything is configured correctly, your program will be compiled using `g++`.
 ## Usage
 
 ### Using the Executable
