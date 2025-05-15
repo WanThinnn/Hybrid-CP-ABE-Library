@@ -313,7 +313,7 @@ To use the pre-built executable, navigate to the `CPABE-AC17-Scheme/demo` direct
 
 ```sh
 cd Hybrid-CP-ABE-Library/demo
-.\hybrid-cp-abe.exe
+./hybrid-cp-abe.exe
 ```
 
 
@@ -328,13 +328,13 @@ Usage: hybrid-cp-abe.exe decrypt <public_key_file> <private_key_file> <ciphertex
 
 Example commands:
 ```sh
-.\hybrid-cp-abe.exe setup "test_case" Base64
-.\hybrid-cp-abe.exe genkey "test_case/public_key.key" "test_case/master_key.key" "A B C" "test_case/private_key.key"
-.\hybrid-cp-abe.exe encrypt "test_case/public_key.key" "test_case/plaintext.txt" "((A and C) or E)" "test_case/ciphertext.txt"
-.\hybrid-cp-abe.exe decrypt "test_case/public_key.key" "test_case/private_key.key" "test_case/ciphertext.txt" "test_case/recovertext.txt"
+./hybrid-cp-abe.exe setup "test_case" Base64
+./hybrid-cp-abe.exe genkey "test_case/public_key.key" "test_case/master_key.key" "A B C" "test_case/private_key.key"
+./hybrid-cp-abe.exe encrypt "test_case/public_key.key" "test_case/plaintext.txt" "((A and C) or E)" "test_case/ciphertext.txt"
+./hybrid-cp-abe.exe decrypt "test_case/public_key.key" "test_case/private_key.key" "test_case/ciphertext.txt" "test_case/recovertext.txt"
 ```
 ### Integrating the Library
-After building the library, you can integrate it into any program on Windows. Here are the steps to include the library in your project.
+After building the library, you can integrate it into any program on Windows/Linux. Here are the steps to include the library in your project.
 Please go to <b>python-sources</b> folder to see more.
 
 ## Acknowledgements
