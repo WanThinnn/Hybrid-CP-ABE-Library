@@ -1,0 +1,114 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "Build executable (cryptopp/rabe_ffi)",
+            "command": "g++",
+            "args": [
+                "-O3",
+                "-g2",
+                "-Wall",
+                "-I${workspaceFolder}/include",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-L${workspaceFolder}/lib/static-lib",
+                "-lcryptopp",
+                "-lrabe_ffi"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Build executable linking cryptopp and rabe_ffi."
+        },
+        {
+            "type": "shell",
+            "label": "Build executable (hybrid CP-ABE)",
+            "command": "g++",
+            "args": [
+                "-O2",
+                "-g",
+                "-Wall",
+                "-I${workspaceFolder}/include",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-L${workspaceFolder}/lib/static-lib",
+                "-lhybrid-cp-abe"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Build executable linking fat library libhybrid-cp-abe.a."
+        },
+        {
+            "type": "shell",
+            "label": "Compile source for hybrid CP-ABE (1/3)",
+            "command": "g++",
+            "args": [
+                "-O2",
+                "-g",
+                "-Wall",
+                "-c",
+                "${file}",
+                "-I${workspaceFolder}/include",
+                "-fPIC",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}.o"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Compile source into object file."
+        },
+        {
+            "type": "shell",
+            "label": "Extract dependency objects (2/3)",
+            "command": "bash",
+            "args": [
+                "-c",
+                "rm -rf \"${workspaceFolder}/tmp_extracted\" && mkdir -p \"${workspaceFolder}/tmp_extracted\" && cd \"${workspaceFolder}/lib/static-lib\" && ar x libcryptopp.a && ar x librabe_ffi.a && mv *.o \"${workspaceFolder}/tmp_extracted/\""
+            ],
+            "problemMatcher": [],
+            "group": "build",
+            "detail": "Extract .o files from libcryptopp.a and librabe_ffi.a."
+        },
+        {
+            "type": "shell",
+            "label": "Create fat static library for hybrid CP-ABE (3/3)",
+            "command": "bash",
+            "args": [
+                "-c",
+                "ar rcs \"${workspaceFolder}/lib/static-lib/libhybrid-cp-abe.a\" \"${fileDirname}/${fileBasenameNoExtension}.o\" \"${workspaceFolder}/tmp_extracted/\"*.o && rm -rf \"${workspaceFolder}/tmp_extracted\""
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Combine object files into libhybrid-cp-abe.a."
+        },
+        {
+            "type": "shell",
+            "label": "Build shared library for hybrid CP-ABE",
+            "command": "g++",
+            "args": [
+                "-O2",
+                "-g",
+                "-Wall",
+                "-fPIC",
+                "-DBUILD_DLL",
+                "-I${workspaceFolder}/include",
+                "${file}",
+                "-shared",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}.so",
+                "-L${workspaceFolder}/lib/static-lib",
+                "-lhybrid-cp-abe",
+                "-lcryptopp",
+                "-lrabe_ffi"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Build shared library (.so) for hybrid CP-ABE."
+        }
+    ]
+}
