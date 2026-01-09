@@ -8,7 +8,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 lib_path = os.path.join(script_dir, "hybrid-cp-abe.dll")
 
 if not os.path.exists(lib_path):
-    print(f"❌ Error: DLL not found at {lib_path}")
+    print(f"Error: DLL not found at {lib_path}")
     print(f"   Make sure hybrid-cp-abe.dll is in the same directory as this script.")
     sys.exit(1)
 
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         print("Examples:")
         print(f"  python {sys.argv[0]} setup ./keys")
         print(f"  python {sys.argv[0]} genkey ./keys/cpabe_msk.key \"admin it\" ./keys/user.key")
-        print(f"  python {sys.argv[0]} encrypt ./keys/cpabe_pk.key data.txt '(\"admin\" and \"it\")' data.enc")
+        print(f"  python {sys.argv[0]} encrypt ./keys/cpabe_pk.key data.txt \"(admin and it)\" data.enc")
         print(f"  python {sys.argv[0]} decrypt ./keys/user.key data.enc data.dec")
         sys.exit(1)
 
