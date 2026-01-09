@@ -315,17 +315,17 @@ The usage of the executable is as follows:
 ```sh
 Usage: hybrid-cp-abe.exe [setup|genkey|encrypt|decrypt]
 Usage: hybrid-cp-abe.exe setup <path_to_save_file>
-Usage: hybrid-cp-abe.exe genkey <public_key_file> <master_key_file> <attributes> <private_key_file>
+Usage: hybrid-cp-abe.exe genkey <master_key_file> <attributes> <private_key_file>
 Usage: hybrid-cp-abe.exe encrypt <public_key_file> <plaintext_file> <policy> <ciphertext_file>
-Usage: hybrid-cp-abe.exe decrypt <public_key_file> <private_key_file> <ciphertext_file> <recovertext_file>
+Usage: hybrid-cp-abe.exe decrypt <private_key_file> <ciphertext_file> <recovertext_file>
 ```
 
 Example commands:
 ```sh
 ./hybrid-cp-abe.exe setup "test_case" Base64
-./hybrid-cp-abe.exe genkey "test_case/public_key.key" "test_case/master_key.key" "A B C" "test_case/private_key.key"
+./hybrid-cp-abe.exe genkey "test_case/master_key.key" "A B C" "test_case/private_key.key"
 ./hybrid-cp-abe.exe encrypt "test_case/public_key.key" "test_case/plaintext.txt" "((A and C) or E)" "test_case/ciphertext.txt"
-./hybrid-cp-abe.exe decrypt "test_case/public_key.key" "test_case/private_key.key" "test_case/ciphertext.txt" "test_case/recovertext.txt"
+./hybrid-cp-abe.exe decrypt "test_case/private_key.key" "test_case/ciphertext.txt" "test_case/recovertext.txt"
 ```
 ### Integrating the Library
 After building the library, you can integrate it into any program on Windows/Linux. Here are the steps to include the library in your project.
