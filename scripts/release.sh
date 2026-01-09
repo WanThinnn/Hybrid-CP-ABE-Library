@@ -1,8 +1,11 @@
 #!/bin/bash
 # =============================================================================
 # Hybrid CP-ABE Library Release Script
-# Usage: ./scripts/release.sh <version>
+# Usage: ./scripts/release.sh <version> [--win] [--linux]
 # Example: ./scripts/release.sh 3.0.0
+#          ./scripts/release.sh 3.0.0 --win
+#          ./scripts/release.sh 3.0.0 --linux
+#          ./scripts/release.sh 3.0.0 --win --linux
 # =============================================================================
 
 set -e
@@ -14,15 +17,50 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Default: build both platforms
+BUILD_WIN=false
+BUILD_LINUX=false
+
+# Parse arguments
+VERSION=""
+for arg in "$@"; do
+    case $arg in
+        --win)
+            BUILD_WIN=true
+            ;;
+        --linux)
+            BUILD_LINUX=true
+            ;;
+        -*)
+            echo -e "${RED}Error: Unknown option ${arg}${NC}"
+            echo "Usage: ./scripts/release.sh <version> [--win] [--linux]"
+            exit 1
+            ;;
+        *)
+            if [ -z "$VERSION" ]; then
+                VERSION="$arg"
+            fi
+            ;;
+    esac
+done
+
+# If no platform specified, build both
+if [ "$BUILD_WIN" = false ] && [ "$BUILD_LINUX" = false ]; then
+    BUILD_WIN=true
+    BUILD_LINUX=true
+fi
+
 # Check if version is provided
-if [ -z "$1" ]; then
+if [ -z "$VERSION" ]; then
     echo -e "${RED}Error: Version argument required${NC}"
-    echo "Usage: ./scripts/release.sh <version>"
-    echo "Example: ./scripts/release.sh 3.0.0"
+    echo "Usage: ./scripts/release.sh <version> [--win] [--linux]"
+    echo "Examples:"
+    echo "  ./scripts/release.sh 3.0.0           # Build both platforms"
+    echo "  ./scripts/release.sh 3.0.0 --win     # Build Windows only"
+    echo "  ./scripts/release.sh 3.0.0 --linux   # Build Linux only"
     exit 1
 fi
 
-VERSION="$1"
 TAG="v${VERSION}"
 
 # Normalize version format (remove 'v' prefix if provided)
@@ -32,6 +70,9 @@ TAG="v${VERSION}"
 echo -e "${BLUE}=== Hybrid CP-ABE Library Release Script ===${NC}"
 echo -e "Version: ${GREEN}${VERSION}${NC}"
 echo -e "Tag: ${GREEN}${TAG}${NC}"
+echo -e "Platforms:"
+[ "$BUILD_WIN" = true ] && echo -e "  - ${GREEN}Windows (x86_64)${NC}"
+[ "$BUILD_LINUX" = true ] && echo -e "  - ${GREEN}Linux (x86_64)${NC}"
 echo ""
 
 # Confirm with user
@@ -86,12 +127,30 @@ echo -e "${BLUE}[6/6] Creating and pushing tag ${TAG}...${NC}"
 git tag "${TAG}"
 git push origin "${TAG}"
 
+# Export build flags for GitHub Actions workflow
+echo "BUILD_WIN=${BUILD_WIN}" >> "$GITHUB_ENV" 2>/dev/null || true
+echo "BUILD_LINUX=${BUILD_LINUX}" >> "$GITHUB_ENV" 2>/dev/null || true
+
 echo ""
 echo -e "${GREEN}=== Release ${TAG} completed! ===${NC}"
 echo -e "GitHub Actions will now:"
-echo -e "  - Build library packages for Linux and Windows"
-echo -e "  - Create GitHub Release with:"
-echo -e "    - libhybrid-cp-abe_linux_x86_64_v${VERSION}.zip"
-echo -e "    - libhybrid-cp-abe_win_x86_64_v${VERSION}.zip"
+echo -e "  - Build library packages for:"
+[ "$BUILD_WIN" = true ] && echo -e "    ${GREEN}✓ Windows (x86_64)${NC}"
+[ "$BUILD_LINUX" = true ] && echo -e "    ${GREEN}✓ Linux (x86_64)${NC}"
+echo ""
+echo -e "Package contents:"
+echo -e "  ${YELLOW}lib/${NC}"
+[ "$BUILD_WIN" = true ] && echo -e "    - libhybrid-cp-abe.dll  (dynamic library)"
+[ "$BUILD_WIN" = true ] && echo -e "    - libhybrid-cp-abe.lib  (static library)"
+[ "$BUILD_LINUX" = true ] && echo -e "    - libhybrid-cp-abe.so   (shared library)"
+[ "$BUILD_LINUX" = true ] && echo -e "    - libhybrid-cp-abe.a    (static library)"
+echo -e "  ${YELLOW}include/${NC}"
+echo -e "    - hybrid-cp-abe.h"
+echo -e "    - rabe/"
+echo -e "      - rabe.h"
+echo ""
+echo -e "Release artifacts:"
+[ "$BUILD_WIN" = true ] && echo -e "  - libhybrid-cp-abe_win_x86_64_v${VERSION}.zip"
+[ "$BUILD_LINUX" = true ] && echo -e "  - libhybrid-cp-abe_linux_x86_64_v${VERSION}.zip"
 echo ""
 echo -e "Check progress at: ${BLUE}https://github.com/WanThinnn/Hybrid-CP-ABE-Library/actions${NC}"

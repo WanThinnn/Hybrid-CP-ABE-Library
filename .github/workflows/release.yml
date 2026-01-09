@@ -40,19 +40,24 @@ jobs:
           PACKAGE_NAME="${{ env.LIB_NAME }}_linux_x86_64_v${VERSION}"
           
           mkdir -p "${PACKAGE_NAME}/include"
-          mkdir -p "${PACKAGE_NAME}/lib/dynamic-lib"
+          mkdir -p "${PACKAGE_NAME}/lib"
           
-          # Copy header file
+          # Copy header files
           cp src/cpp-sources/include/hybrid-cp-abe.h "${PACKAGE_NAME}/include/"
+          cp -r src/cpp-sources/include/rabe "${PACKAGE_NAME}/include/"
           
-          # Copy Linux shared libraries (.so files)
-          find src/cpp-sources/lib/dynamic-lib -name "*.so" -exec cp {} "${PACKAGE_NAME}/lib/dynamic-lib/" \;
+          # Copy Linux dynamic libraries (.so files)
+          find src/cpp-sources/lib -name "*.so" -exec cp {} "${PACKAGE_NAME}/lib/" \; 2>/dev/null || true
+          
+          # Copy Linux static libraries (.a files)
+          find src/cpp-sources/lib -name "*.a" -exec cp {} "${PACKAGE_NAME}/lib/" \; 2>/dev/null || true
           
           # Create zip
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
           
           echo "Created: ${PACKAGE_NAME}.zip"
-          ls -la "${PACKAGE_NAME}.zip"
+          echo "Package contents:"
+          unzip -l "${PACKAGE_NAME}.zip"
 
       # ========================================================================
       # Build Windows Package
@@ -63,19 +68,24 @@ jobs:
           PACKAGE_NAME="${{ env.LIB_NAME }}_win_x86_64_v${VERSION}"
           
           mkdir -p "${PACKAGE_NAME}/include"
-          mkdir -p "${PACKAGE_NAME}/lib/dynamic-lib"
+          mkdir -p "${PACKAGE_NAME}/lib"
           
-          # Copy header file
+          # Copy header files
           cp src/cpp-sources/include/hybrid-cp-abe.h "${PACKAGE_NAME}/include/"
+          cp -r src/cpp-sources/include/rabe "${PACKAGE_NAME}/include/"
           
-          # Copy Windows DLL files
-          find src/cpp-sources/lib/dynamic-lib -name "*.dll" -exec cp {} "${PACKAGE_NAME}/lib/dynamic-lib/" \;
+          # Copy Windows dynamic libraries (.dll files)
+          find src/cpp-sources/lib -name "*.dll" -exec cp {} "${PACKAGE_NAME}/lib/" \; 2>/dev/null || true
+          
+          # Copy Windows static libraries (.lib files)
+          find src/cpp-sources/lib -name "*.lib" -exec cp {} "${PACKAGE_NAME}/lib/" \; 2>/dev/null || true
           
           # Create zip
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
           
           echo "Created: ${PACKAGE_NAME}.zip"
-          ls -la "${PACKAGE_NAME}.zip"
+          echo "Package contents:"
+          unzip -l "${PACKAGE_NAME}.zip"
 
       # ========================================================================
       # Create GitHub Release
