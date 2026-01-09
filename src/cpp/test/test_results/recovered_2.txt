@@ -1,0 +1,1 @@
+This is a confidential medical record for patient ID 12345. 

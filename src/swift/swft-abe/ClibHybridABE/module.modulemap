@@ -1,0 +1,7 @@
+module ClibHybridABE [system] {
+    header "include/hybrid_cp_abe.h"
+    link "hybrid-cp-abe"  // Tên thư viện tĩnh mà bạn muốn liên kết
+    export *
+    requires cplusplus
+    linkflags -L/home/wanthinnn/Documents/swft-abe/lib  // Chỉ định thư mục chứa thư viện tĩnh
+}

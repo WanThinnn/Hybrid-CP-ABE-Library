@@ -17,7 +17,7 @@ Hybrid Ciphertext Policy Attribute Based Encryption Library for C/C++ in Windows
 2. Navigate to the project directory:
 _Using x64 Native Tools Command Prompt for VS 2022_
    ```sh
-    cd Hybrid-CP-ABE-Library/src/cpp-sources
+    cd Hybrid-CP-ABE-Library/src/cpp
     code . #for open projects Visual Studio Code
     ```
 4. Configure `tasks.json` to build the project using `cl.exe`:
@@ -178,7 +178,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
     ```
 2. Navigate to the project directory:
     ```sh
-    cd Hybrid-CP-ABE-Library/src/cpp-sources
+    cd Hybrid-CP-ABE-Library/src/cpp
     code . #for open projects Visual Studio Code
     ```
 3. Configure `tasks.json` to build the project using `g++`:
