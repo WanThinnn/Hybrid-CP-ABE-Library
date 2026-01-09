@@ -309,12 +309,6 @@ _Using x64 Native Tools Command Prompt for VS 2022_
 
 ### Using the Executable
 
-To use the pre-built executable, navigate to the `CPABE-AC17-Scheme/demo` directory and run the `ac17_cli_app.exe` file:
-
-```sh
-cd Hybrid-CP-ABE-Library/demo
-./hybrid-cp-abe.exe
-```
 
 
 The usage of the executable is as follows:
