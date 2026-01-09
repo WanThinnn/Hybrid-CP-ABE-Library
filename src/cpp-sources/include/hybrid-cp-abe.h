@@ -69,8 +69,7 @@ extern "C"
                             const char *ciphertextFile);
     
     // Giải mã file (cần thuộc tính thỏa mãn policy)
-    LIB_API int AC17decrypt(const char *publicKeyFile, 
-                            const char *privateKeyFile, 
+    LIB_API int AC17decrypt(const char *privateKeyFile, 
                             const char *ciphertextFile, 
                             const char *recovertextFile);
 

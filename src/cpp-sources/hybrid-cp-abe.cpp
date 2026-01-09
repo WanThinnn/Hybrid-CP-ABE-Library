@@ -54,7 +54,7 @@ static std::vector<std::string> splitAttributes(const std::string &input)
 static std::string toLowerCase(const std::string &str) {
     std::string lowerStr = str;
     std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), [](unsigned char c) {
-        return std::tolower(c);
+        return static_cast<char>(std::tolower(c));
     });
     return lowerStr;
 }
@@ -242,13 +242,21 @@ int setup(const char *path)
         }
         if (strFileFormat == "JsonText" || strFileFormat == "HEX" || strFileFormat == "Base64")
         {
-            SaveFile(strPath + "/master_key.key", masterKeyJson, strFileFormat);
-            SaveFile(strPath + "/public_key.key", publicKeyJson, strFileFormat);
-            std::cout << "Setup completed successfully." << std::endl;
+            bool masterKeySaved = SaveFile(strPath + "/cpabe_msk.key", masterKeyJson, strFileFormat);
+            bool publicKeySaved = SaveFile(strPath + "/cpabe_pk.key", publicKeyJson, strFileFormat);
+            
             free(masterKeyJson);
             free(publicKeyJson);
             rabe_ac17_free_master_key(setupResult.master_key);
             rabe_ac17_free_public_key(setupResult.public_key);
+            
+            if (!masterKeySaved || !publicKeySaved)
+            {
+                std::cerr << "Setup failed: Could not save key files. Check if directory exists." << std::endl;
+                return HCPABE_ERR_FILE_NOT_FOUND;
+            }
+            
+            std::cout << "Setup completed successfully." << std::endl;
             return HCPABE_SUCCESS;
         }
         else
@@ -294,8 +302,21 @@ int generateSecretKey(const char *masterKeyFile, const char *attributes, const c
         }
         if (strFileFormat == "JsonText" || strFileFormat == "HEX" || strFileFormat == "Base64")
         {
-            SaveFile(privateKeyFile, secretKeyJson, strFileFormat);
+            bool saved = SaveFile(privateKeyFile, secretKeyJson, strFileFormat);
+            
+            // Giải phóng và xóa bộ nhớ nhạy cảm
+            secureWipe(secretKeyJson, std::strlen(secretKeyJson));
+            free(secretKeyJson);
+            rabe_cp_ac17_free_secret_key(secretKey);
+            
+            if (!saved)
+            {
+                std::cerr << "Failed to save private key file. Check if directory exists." << std::endl;
+                return HCPABE_ERR_FILE_NOT_FOUND;
+            }
+            
             std::cout << "Private key generated successfully." << std::endl;
+            return HCPABE_SUCCESS;
         }
         else
         {
@@ -393,11 +414,15 @@ int AC17encrypt(const char *publicKeyFile, const char *plaintextFile, const char
         combined.append(encryptedKeyB);
         combined.append(ciphertext);
 
-        // Mã hóa cuối cùng sang Base64
-        std::string finalOutput;
-        CryptoPP::StringSource ss(combined, true, new CryptoPP::Base64Encoder(new CryptoPP::StringSink(finalOutput)));
-        if (!SaveFile(strCiphertextFile, finalOutput.c_str(), "Original"))
+        // Lưu trực tiếp dưới dạng binary
+        try {
+            CryptoPP::FileSink fileSink(strCiphertextFile.c_str(), true);
+            fileSink.Put(reinterpret_cast<const CryptoPP::byte *>(combined.data()), combined.size());
+            fileSink.MessageEnd();
+        }
+        catch (const CryptoPP::Exception &ex)
         {
+            std::cerr << "Failed to save ciphertext file: " << ex.what() << std::endl;
             secureWipe(&aesKey[0], aesKey.size());
             secureWipe(&randomKeyStr[0], randomKeyStr.size());
             return HCPABE_ERR_FILE_NOT_FOUND;
@@ -427,7 +452,7 @@ int AC17encrypt(const char *publicKeyFile, const char *plaintextFile, const char
     }
 }
 
-int AC17decrypt(const char *publicKeyFile, const char *privateKeyFile, const char *ciphertextFile, const char *recovertextFile)
+int AC17decrypt(const char *privateKeyFile, const char *ciphertextFile, const char *recovertextFile)
 {
     std::string aesKey;
     std::string recoveredKeyStr;
@@ -435,12 +460,17 @@ int AC17decrypt(const char *publicKeyFile, const char *privateKeyFile, const cha
     try
     {
         std::string strCiphertextFile(ciphertextFile);
-        std::string encodedCiphertext;
-        CryptoPP::FileSource fileSource(strCiphertextFile.c_str(), true, new CryptoPP::StringSink(encodedCiphertext));
-
-        // Giải mã Base64
+        
+        // Đọc trực tiếp dữ liệu binary từ file
         std::string decodedCiphertext;
-        CryptoPP::StringSource ss1(encodedCiphertext, true, new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedCiphertext)));
+        try {
+            CryptoPP::FileSource fileSource(strCiphertextFile.c_str(), true, new CryptoPP::StringSink(decodedCiphertext));
+        }
+        catch (const CryptoPP::Exception &ex)
+        {
+            std::cerr << "Failed to read ciphertext file: " << ex.what() << std::endl;
+            return HCPABE_ERR_FILE_NOT_FOUND;
+        }
 
         // Kiểm tra version byte
         if (decodedCiphertext.empty())
@@ -520,8 +550,22 @@ int AC17decrypt(const char *publicKeyFile, const char *privateKeyFile, const cha
             return HCPABE_ERR_CRYPTO_FAILED;
         }
 
-        CryptoPP::FileSink fileSink(recovertextFile);
-        fileSink.Put(reinterpret_cast<const CryptoPP::byte *>(recovered.data()), recovered.size());
+        // Lưu file đã giải mã
+        try {
+            CryptoPP::FileSink fileSink(recovertextFile);
+            fileSink.Put(reinterpret_cast<const CryptoPP::byte *>(recovered.data()), recovered.size());
+            fileSink.MessageEnd();
+        }
+        catch (const CryptoPP::Exception &ex)
+        {
+            std::cerr << "Failed to save decrypted file: " << ex.what() << std::endl;
+            secureWipe(&aesKey[0], aesKey.size());
+            secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
+            rabe_cp_ac17_free_secret_key(secretKey);
+            rabe_cp_ac17_free_cipher(encryptedKey);
+            return HCPABE_ERR_FILE_NOT_FOUND;
+        }
+        
         std::cout << "Decryption successful!" << std::endl;
         
         // Xóa bộ nhớ nhạy cảm và giải phóng

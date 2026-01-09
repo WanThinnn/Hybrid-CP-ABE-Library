@@ -21,13 +21,13 @@ void printUsage(const char* programName)
     std::cout << "  setup   <path>                           - Generate master key and public key" << std::endl;
     std::cout << "  genkey  <master_key> <attrs> <out_file>  - Generate private key from attributes" << std::endl;
     std::cout << "  encrypt <pub_key> <file> <policy> <out>  - Encrypt file with access policy" << std::endl;
-    std::cout << "  decrypt <pub_key> <priv_key> <file> <out> - Decrypt file" << std::endl;
+    std::cout << "  decrypt <priv_key> <file> <out>         - Decrypt file" << std::endl;
     std::cout << std::endl;
     std::cout << "Examples:" << std::endl;
     std::cout << "  " << programName << " setup ./keys" << std::endl;
-    std::cout << "  " << programName << " genkey ./keys/master_key.key \"admin it\" ./keys/user.key" << std::endl;
-    std::cout << "  " << programName << " encrypt ./keys/public_key.key data.txt \"\\\"admin\\\" and \\\"it\\\"\" data.enc" << std::endl;
-    std::cout << "  " << programName << " decrypt ./keys/public_key.key ./keys/user.key data.enc data.dec" << std::endl;
+    std::cout << "  " << programName << " genkey ./keys/cpabe_msk.key \"admin it\" ./keys/user.key" << std::endl;
+    std::cout << "  " << programName << " encrypt ./keys/cpabe_pk.key data.txt \"\\\"admin\\\" and \\\"it\\\"\" data.enc" << std::endl;
+    std::cout << "  " << programName << " decrypt ./keys/user.key data.enc data.dec" << std::endl;
 }
 
 int main(int argc, char *argv[])
@@ -88,12 +88,12 @@ int main(int argc, char *argv[])
         }
         else if (mode == "decrypt")
         {
-            if (argc < 6)
+            if (argc < 5)
             {
-                std::cerr << "Usage: " << argv[0] << " decrypt <public_key_file> <private_key_file> <ciphertext_file> <recovertext_file>" << std::endl;
+                std::cerr << "Usage: " << argv[0] << " decrypt <private_key_file> <ciphertext_file> <recovertext_file>" << std::endl;
                 return 1;
             }
-            result = AC17decrypt(argv[2], argv[3], argv[4], argv[5]);
+            result = AC17decrypt(argv[2], argv[3], argv[4]);
         }
         else
         {
