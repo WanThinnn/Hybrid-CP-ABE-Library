@@ -3,7 +3,84 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build executable",
+            "label": "Build Hybrid CP-ABE CLI Executable",
+            "command": "cl.exe",
+            "args": [
+                "/MD",
+                "/GS",
+                "/O2",
+                "/Zi",
+                "/EHsc",
+                "/Fe:${workspaceFolder}\\hybrid-cp-abe.exe",
+                "${workspaceFolder}\\hybrid-cp-abe.cpp",
+                "${workspaceFolder}\\main.cpp",
+                "/I${workspaceFolder}\\include",
+                "/link",
+                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "librabe_ffi.lib",
+                "cryptlib.lib",
+                "bcrypt.lib",
+                "advapi32.lib",
+                "ntdll.lib",
+                "Ws2_32.lib",
+                "/MACHINE:X64"
+            ],
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build CLI executable from hybrid-cp-abe.cpp + main.cpp"
+        },
+        {
+            "type": "shell",
+            "label": "Build Hybrid CP-ABE Static Library (.lib)",
+            "command": "cmd",
+            "args": [
+                "/c",
+                "cl.exe /MD /GS /O2 /Zi /EHsc /c ${workspaceFolder}\\hybrid-cp-abe.cpp /I${workspaceFolder}\\include /Fo:${workspaceFolder}\\hybrid-cp-abe.obj && lib.exe /OUT:${workspaceFolder}\\libhybrid-cp-abe.lib ${workspaceFolder}\\hybrid-cp-abe.obj /LIBPATH:${workspaceFolder}\\lib\\static-lib librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib"
+            ],
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build",
+            "detail": "Build static library from hybrid-cp-abe.cpp only (no main.cpp)"
+        },
+        {
+            "type": "shell",
+            "label": "Build Hybrid CP-ABE DLL",
+            "command": "cl.exe",
+            "args": [
+                "/MD",
+                "/GS",
+                "/O2",
+                "/Zi",
+                "/EHsc",
+                "/LD",
+                "/DBUILD_DLL",
+                "/Fe:${workspaceFolder}\\hybrid-cp-abe.dll",
+                "${workspaceFolder}\\hybrid-cp-abe.cpp",
+                "/I${workspaceFolder}\\include",
+                "/link",
+                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "librabe_ffi.lib",
+                "cryptlib.lib",
+                "bcrypt.lib",
+                "advapi32.lib",
+                "ntdll.lib",
+                "/MACHINE:X64"
+            ],
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build",
+            "detail": "Build DLL from hybrid-cp-abe.cpp only (no main.cpp)"
+        },
+        {
+            "type": "shell",
+            "label": "C/C++: cl.exe build single file executable",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -17,7 +94,6 @@
                 "/link",
                 "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
                 "librabe_ffi.lib",
-                // "cryptlib.lib",
                 "bcrypt.lib",
                 "advapi32.lib",
                 "ntdll.lib",
@@ -28,11 +104,11 @@
                 "$msCompile"
             ],
             "group": "build",
-            "detail": "Task to build executable."
+            "detail": "Build single file as executable (for testing)"
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build executable for hybrid CP-ABE",
+            "label": "C/C++: cl.exe build executable for hybrid CP-ABE (legacy)",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -52,87 +128,19 @@
                 "$msCompile"
             ],
             "group": "build",
-            "detail": "Task to build executable for hybrid CP-ABE."
+            "detail": "Task to build executable for hybrid CP-ABE (legacy)."
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build static library for hybrid CP-ABE",
-            "command": "cl.exe",
+            "label": "Clean build artifacts",
+            "command": "cmd",
             "args": [
-                "/MD",
-                "/GS",
-                "/O2",
-                "/Zi",
-                "/EHsc",
                 "/c",
-                "${file}",
-                "/I${workspaceFolder}\\include"
+                "del /Q ${workspaceFolder}\\*.obj ${workspaceFolder}\\*.exe ${workspaceFolder}\\*.dll ${workspaceFolder}\\*.lib ${workspaceFolder}\\*.pdb ${workspaceFolder}\\*.ilk ${workspaceFolder}\\*.exp 2>nul || echo Clean complete"
             ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Task to build static library for hybrid CP-ABE."
-        },
-        {
-            "type": "shell",
-            "label": "C/C++: lib.exe create static library for hybrid CP-ABE",
-            "command": "lib.exe",
-            "args": [
-                "/OUT:${fileDirname}\\${fileBasenameNoExtension}.lib",
-                "${fileDirname}\\${fileBasenameNoExtension}.obj",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
-                "librabe_ffi.lib",
-                "cryptlib.lib",
-                "bcrypt.lib",
-                "advapi32.lib",
-                "ntdll.lib"
-            ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Task to create static library."
-        },
-        {
-            "type": "shell",
-            "label": "C/C++: cl.exe build dynamic linking library (DLL) for hybrid CP-ABE",
-            "command": "cl.exe",
-            "args": [
-                "/MD",
-                "/GS",
-                "/O2",
-                "/Zi",
-                "/EHsc",
-                "/LD",
-                "/DBUILD_DLL",
-                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.dll",
-                "${file}",
-                "/I${workspaceFolder}\\include",
-                "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
-                "librabe_ffi.lib",
-                "cryptlib.lib",
-                "bcrypt.lib",
-                "advapi32.lib",
-                "ntdll.lib",
-                "/MACHINE:X64"
-            ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "C/C++: cl.exe build dynamic linking library (DLL) for hybrid CP-ABE"
-        },
-       
+            "problemMatcher": [],
+            "group": "build",
+            "detail": "Remove build artifacts (.obj, .exe, .dll, .lib, .pdb)"
+        }
     ]
 }

@@ -19,15 +19,26 @@
 #include <algorithm>
 #include <cstring>
 
-// #include <winsock2.h>
 #include "rabe/rabe.h"
 #include "hybrid-cp-abe.h"
 
-using namespace std;
-using namespace CryptoPP;
+// ============================================================================
+// Secure Memory Wipe
+// ============================================================================
+static void secureWipe(void* ptr, size_t len) {
+    if (ptr == nullptr || len == 0) return;
+    volatile unsigned char* p = static_cast<volatile unsigned char*>(ptr);
+    while (len--) {
+        *p++ = 0;
+    }
+}
 
-// Hàm splitAttributes: không thay đổi.
-std::vector<std::string> splitAttributes(const std::string &input)
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+// Hàm splitAttributes: tách chuỗi thuộc tính thành vector
+static std::vector<std::string> splitAttributes(const std::string &input)
 {
     std::vector<std::string> result;
     std::istringstream ss(input);
@@ -39,8 +50,8 @@ std::vector<std::string> splitAttributes(const std::string &input)
     return result;
 }
 
-// Hàm chuyển sang chữ thường (dùng std::string)
-std::string toLowerCase(const std::string &str) {
+// Hàm chuyển sang chữ thường
+static std::string toLowerCase(const std::string &str) {
     std::string lowerStr = str;
     std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), [](unsigned char c) {
         return std::tolower(c);
@@ -49,7 +60,7 @@ std::string toLowerCase(const std::string &str) {
 }
 
 // Hàm chuyển đổi dữ liệu thành vector<uint8_t>
-std::vector<uint8_t> convertToByteArray(const void *data, size_t length) {
+static std::vector<uint8_t> convertToByteArray(const void *data, size_t length) {
     if (data == nullptr && length > 0) {
         throw std::invalid_argument("Null pointer with non-zero length!");
     }
@@ -57,8 +68,8 @@ std::vector<uint8_t> convertToByteArray(const void *data, size_t length) {
     return std::vector<uint8_t>(bytePtr, bytePtr + length);
 }
 
-// Hàm ensureJsonString đã được chuyển về trả về std::string
-std::string ensureJsonString(const std::string &input)
+// Hàm ensureJsonString - chuẩn hóa policy sang format JSON
+static std::string ensureJsonString(const std::string &input)
 {
     std::string lowerInput = toLowerCase(input);
     std::istringstream iss(lowerInput);
@@ -97,8 +108,11 @@ std::string ensureJsonString(const std::string &input)
     return output;
 }
 
-// Hàm SaveFile: không thay đổi nhiều, chỉ giữ lại cách dùng std::string.
-bool SaveFile(const std::string &filename, const char *data, const std::string &format)
+// ============================================================================
+// File I/O Functions
+// ============================================================================
+
+static bool SaveFile(const std::string &filename, const char *data, const std::string &format)
 {
     if (data == nullptr)
     {
@@ -110,19 +124,19 @@ bool SaveFile(const std::string &filename, const char *data, const std::string &
     {
         if (format == "JsonText" || format == "Original")
         {
-            FileSink file(filename.c_str(), true);
+            CryptoPP::FileSink file(filename.c_str(), true);
             file.Put(reinterpret_cast<const CryptoPP::byte *>(data), data_len);
             file.MessageEnd();
         }
         else if (format == "Base64")
         {
-            StringSource ss(reinterpret_cast<const CryptoPP::byte *>(data), data_len, true,
-                new Base64Encoder(new FileSink(filename.c_str()), false));
+            CryptoPP::StringSource ss(reinterpret_cast<const CryptoPP::byte *>(data), data_len, true,
+                new CryptoPP::Base64Encoder(new CryptoPP::FileSink(filename.c_str()), false));
         }
         else if (format == "HEX")
         {
-            StringSource ss(reinterpret_cast<const CryptoPP::byte *>(data), data_len, true,
-                new HexEncoder(new FileSink(filename.c_str()), false));
+            CryptoPP::StringSource ss(reinterpret_cast<const CryptoPP::byte *>(data), data_len, true,
+                new CryptoPP::HexEncoder(new CryptoPP::FileSink(filename.c_str()), false));
         }
         else
         {
@@ -143,22 +157,21 @@ bool SaveFile(const std::string &filename, const char *data, const std::string &
     return true;
 }
 
-// Hàm LoadFile: giữ nguyên chức năng.
-bool LoadFile(const std::string &filename, std::string &data, const std::string &format)
+static bool LoadFile(const std::string &filename, std::string &data, const std::string &format)
 {
     try
     {
         std::string encodedData;
-        FileSource fs(filename.c_str(), true, new StringSink(encodedData));
+        CryptoPP::FileSource fs(filename.c_str(), true, new CryptoPP::StringSink(encodedData));
         if (format == "Base64")
         {
-            StringSource ss(encodedData, true,
-                new Base64Decoder(new StringSink(data)));
+            CryptoPP::StringSource ss(encodedData, true,
+                new CryptoPP::Base64Decoder(new CryptoPP::StringSink(data)));
         }
         else if (format == "HEX")
         {
-            StringSource ss(encodedData, true,
-                new HexDecoder(new StringSink(data)));
+            CryptoPP::StringSource ss(encodedData, true,
+                new CryptoPP::HexDecoder(new CryptoPP::StringSink(data)));
         }
         else if (format == "JsonText" || format == "Original")
         {
@@ -167,6 +180,7 @@ bool LoadFile(const std::string &filename, std::string &data, const std::string 
         else
         {
             std::cerr << "Unsupported format. Please choose 'Base64', 'HEX', 'JsonText', or 'Original'\n";
+            return false;
         }
     }
     catch (const CryptoPP::Exception &e)
@@ -177,11 +191,46 @@ bool LoadFile(const std::string &filename, std::string &data, const std::string 
     return true;
 }
 
-// setup function
+// ============================================================================
+// Utility API Implementations
+// ============================================================================
+
+const char* getVersion(void)
+{
+    return HybridCPABE::LIB_VERSION;
+}
+
+const char* getErrorMessage(int errorCode)
+{
+    switch (errorCode) {
+        case HCPABE_SUCCESS:            return "Success";
+        case HCPABE_ERR_FILE_NOT_FOUND: return "File not found";
+        case HCPABE_ERR_INVALID_KEY:    return "Invalid key";
+        case HCPABE_ERR_POLICY_MISMATCH: return "Policy mismatch - attributes do not satisfy policy";
+        case HCPABE_ERR_CRYPTO_FAILED:  return "Cryptographic operation failed";
+        case HCPABE_ERR_INVALID_PARAM:  return "Invalid parameter";
+        case HCPABE_ERR_MEMORY:         return "Memory allocation failed";
+        case HCPABE_ERR_UNSUPPORTED_FORMAT: return "Unsupported format";
+        case HCPABE_ERR_VERSION_MISMATCH: return "Ciphertext format version mismatch";
+        default:                        return "Unknown error";
+    }
+}
+
+void freeBuffer(unsigned char *buffer)
+{
+    if (buffer != nullptr) {
+        free(buffer);
+    }
+}
+
+// ============================================================================
+// Core API Implementations
+// ============================================================================
+
 int setup(const char *path)
 {
     std::string strPath(path);
-    std::string strFileFormat = "Base64";
+    std::string strFileFormat = HybridCPABE::DEFAULT_KEY_FORMAT;
     try
     {
         Ac17SetupResult setupResult = rabe_ac17_init();
@@ -200,7 +249,7 @@ int setup(const char *path)
             free(publicKeyJson);
             rabe_ac17_free_master_key(setupResult.master_key);
             rabe_ac17_free_public_key(setupResult.public_key);
-            return 0; // Thành công: trả về 0
+            return HCPABE_SUCCESS;
         }
         else
         {
@@ -210,24 +259,23 @@ int setup(const char *path)
     catch (const std::exception &ex)
     {
         std::cerr << "Setup failed: " << ex.what() << std::endl;
-        return -1;
+        return HCPABE_ERR_CRYPTO_FAILED;
     }
 }
 
-// generateSecretKey function
-int generateSecretKey(const char *publicKeyFile, const char *masterKeyFile, const char *attributes, const char *privateKeyFile)
+int generateSecretKey(const char *masterKeyFile, const char *attributes, const char *privateKeyFile)
 {
-    std::string strFileFormat = "Base64";
+    std::string strFileFormat = HybridCPABE::DEFAULT_KEY_FORMAT;
     std::string masterKeyStr;
     try
     {
         std::string masterKeyData;
         if (!LoadFile(masterKeyFile, masterKeyData, strFileFormat))
-            throw std::runtime_error("Failed to load master key file.");
+            return HCPABE_ERR_FILE_NOT_FOUND;
         masterKeyStr = masterKeyData;
         const void *masterKey = rabe_ac17_master_key_from_json(masterKeyStr.c_str());
         if (!masterKey)
-            throw std::runtime_error("Failed to convert master key from JSON.");
+            return HCPABE_ERR_INVALID_KEY;
         std::string lowerAttributes = toLowerCase(attributes);
         std::vector<std::string> attrVec = splitAttributes(lowerAttributes);
         std::vector<const char *> attrList;
@@ -237,10 +285,13 @@ int generateSecretKey(const char *publicKeyFile, const char *masterKeyFile, cons
         }
         const void *secretKey = rabe_cp_ac17_generate_secret_key(masterKey, attrList.data(), attrList.size());
         if (!secretKey)
-            throw std::runtime_error("Failed to generate private key.");
+            return HCPABE_ERR_CRYPTO_FAILED;
         char *secretKeyJson = rabe_cp_ac17_secret_key_to_json(secretKey);
         if (!secretKeyJson)
-            throw std::runtime_error("Failed to convert private key to JSON.");
+        {
+            rabe_cp_ac17_free_secret_key(secretKey);
+            return HCPABE_ERR_CRYPTO_FAILED;
+        }
         if (strFileFormat == "JsonText" || strFileFormat == "HEX" || strFileFormat == "Base64")
         {
             SaveFile(privateKeyFile, secretKeyJson, strFileFormat);
@@ -248,79 +299,94 @@ int generateSecretKey(const char *publicKeyFile, const char *masterKeyFile, cons
         }
         else
         {
-            throw std::invalid_argument("Unsupported key format. Please choose 'JsonText', 'Base64', or 'HEX'.");
+            free(secretKeyJson);
+            rabe_cp_ac17_free_secret_key(secretKey);
+            return HCPABE_ERR_UNSUPPORTED_FORMAT;
         }
-        // Giải phóng bộ nhớ trước khi kết thúc
+        // Giải phóng và xóa bộ nhớ nhạy cảm
+        secureWipe(secretKeyJson, std::strlen(secretKeyJson));
         free(secretKeyJson);
         rabe_cp_ac17_free_secret_key(secretKey);
-        return 0;
+        return HCPABE_SUCCESS;
     }
     catch (const std::exception &ex)
     {
         std::cerr << "Error generating private key: " << ex.what() << std::endl;
-        return -1;
+        return HCPABE_ERR_CRYPTO_FAILED;
     }
 }
 
-// AC17encrypt function
 int AC17encrypt(const char *publicKeyFile, const char *plaintextFile, const char *policy, const char *ciphertextFile)
 {
+    std::string aesKey;
+    std::string randomKeyStr;
+    
     try
     {
         std::string strPublicKeyFile(publicKeyFile);
         std::string strPlaintextFile(plaintextFile);
         std::string strCiphertextFile(ciphertextFile);
 
-        AutoSeededRandomPool prng;
+        CryptoPP::AutoSeededRandomPool prng;
         CryptoPP::Integer randomKey(prng, 12288);
-        std::string randomKeyStr;
-        randomKey.Encode(StringSink(randomKeyStr).Ref(), randomKey.MinEncodedSize());
+        randomKey.Encode(CryptoPP::StringSink(randomKeyStr).Ref(), randomKey.MinEncodedSize());
 
         // Mã hóa randomKey bằng CP-ABE
         std::string publicKeyData;
         if (!LoadFile(strPublicKeyFile, publicKeyData, "Base64"))
-            throw std::runtime_error("Failed to load public key file.");
+            return HCPABE_ERR_FILE_NOT_FOUND;
         const void *publicKey = rabe_ac17_public_key_from_json(publicKeyData.c_str());
-        // Sử dụng std::string cho jsonPolicy
+        if (!publicKey)
+            return HCPABE_ERR_INVALID_KEY;
+        
         std::string jsonPolicy = ensureJsonString(policy);
         const void *encryptedKey = rabe_cp_ac17_encrypt(publicKey, jsonPolicy.c_str(), randomKeyStr.c_str(), randomKeyStr.size());
         if (!encryptedKey)
-            throw std::runtime_error("CP-ABE encryption failed.");
-        // Lấy chuỗi JSON từ cipher
+        {
+            rabe_ac17_free_public_key(publicKey);
+            return HCPABE_ERR_CRYPTO_FAILED;
+        }
+        
         char *encryptedKeyJson = rabe_cp_ac17_cipher_to_json(encryptedKey);
         if (!encryptedKeyJson)
-            throw std::runtime_error("Failed to convert cipher to JSON.");
+        {
+            rabe_cp_ac17_free_cipher(encryptedKey);
+            rabe_ac17_free_public_key(publicKey);
+            return HCPABE_ERR_CRYPTO_FAILED;
+        }
         std::string encryptedKeyB = encryptedKeyJson;
-        // Giải phóng bộ nhớ của cipher theo hướng dẫn của thư viện RABE
         rabe_cp_ac17_free_cipher(encryptedKey);
+        rabe_ac17_free_public_key(publicKey);
         free(encryptedKeyJson);
 
         // Tạo khóa AES từ randomKey (hash bằng SHA3-256)
-        SHA3_256 hash;
-        std::string aesKey(hash.DigestSize(), 0);
+        CryptoPP::SHA3_256 hash;
+        aesKey.resize(hash.DigestSize(), 0);
         hash.Update(reinterpret_cast<const CryptoPP::byte *>(randomKeyStr.data()), randomKeyStr.size());
         hash.Final(reinterpret_cast<CryptoPP::byte *>(&aesKey[0]));
 
         // Đọc plaintext từ file
-        ifstream file(strPlaintextFile, ios::binary);
+        std::ifstream file(strPlaintextFile, std::ios::binary);
         if (!file)
-            throw std::runtime_error("Failed to open plaintext file.");
-        std::string plaintext((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
+            return HCPABE_ERR_FILE_NOT_FOUND;
+        std::string plaintext((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        file.close();
 
-        // Mã hóa AES-GCM
-        GCM<AES>::Encryption aes_gcm;
-        SecByteBlock key(reinterpret_cast<const CryptoPP::byte *>(aesKey.data()), aesKey.size());
-        CryptoPP::byte iv[AES::BLOCKSIZE];
+        // Mã hóa AES-GCM với IV 12 bytes (theo NIST)
+        CryptoPP::GCM<CryptoPP::AES>::Encryption aes_gcm;
+        CryptoPP::SecByteBlock key(reinterpret_cast<const CryptoPP::byte *>(aesKey.data()), aesKey.size());
+        CryptoPP::byte iv[HybridCPABE::GCM_IV_SIZE];  // 12 bytes theo NIST
         prng.GenerateBlock(iv, sizeof(iv));
-        aes_gcm.SetKeyWithIV(key, key.size(), iv);
+        aes_gcm.SetKeyWithIV(key, key.size(), iv, sizeof(iv));
 
         std::string ciphertext;
-        AuthenticatedEncryptionFilter ef(aes_gcm, new StringSink(ciphertext));
-        ef.ChannelPut(DEFAULT_CHANNEL, reinterpret_cast<const CryptoPP::byte *>(plaintext.data()), plaintext.size());
-        ef.ChannelMessageEnd(DEFAULT_CHANNEL);
+        CryptoPP::AuthenticatedEncryptionFilter ef(aes_gcm, new CryptoPP::StringSink(ciphertext));
+        ef.ChannelPut(CryptoPP::DEFAULT_CHANNEL, reinterpret_cast<const CryptoPP::byte *>(plaintext.data()), plaintext.size());
+        ef.ChannelMessageEnd(CryptoPP::DEFAULT_CHANNEL);
 
-        // Ghép nối IV, độ dài của encryptedKey, encryptedKey, và ciphertext
+        // Ghép nối: Version + IV + độ dài của encryptedKey + encryptedKey + ciphertext
         std::string combined;
+        combined.push_back(static_cast<char>(HybridCPABE::FORMAT_VERSION));  // Version byte
         combined.append(reinterpret_cast<const char *>(iv), sizeof(iv));
         uint64_t lenEncryptedKey = encryptedKeyB.size();
         combined.append(reinterpret_cast<const char *>(&lenEncryptedKey), sizeof(lenEncryptedKey));
@@ -329,50 +395,81 @@ int AC17encrypt(const char *publicKeyFile, const char *plaintextFile, const char
 
         // Mã hóa cuối cùng sang Base64
         std::string finalOutput;
-        StringSource ss(combined, true, new Base64Encoder(new StringSink(finalOutput)));
+        CryptoPP::StringSource ss(combined, true, new CryptoPP::Base64Encoder(new CryptoPP::StringSink(finalOutput)));
         if (!SaveFile(strCiphertextFile, finalOutput.c_str(), "Original"))
-            throw std::runtime_error("Failed to save ciphertext to file.");
+        {
+            secureWipe(&aesKey[0], aesKey.size());
+            secureWipe(&randomKeyStr[0], randomKeyStr.size());
+            return HCPABE_ERR_FILE_NOT_FOUND;
+        }
+        
         std::cout << "Encryption successful!" << std::endl;
-        return 0;
+        
+        // Xóa bộ nhớ nhạy cảm
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&randomKeyStr[0], randomKeyStr.size());
+        
+        return HCPABE_SUCCESS;
     }
     catch (const CryptoPP::Exception &ex)
     {
         std::cerr << "Crypto++ exception: " << ex.what() << std::endl;
-        return -1;
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&randomKeyStr[0], randomKeyStr.size());
+        return HCPABE_ERR_CRYPTO_FAILED;
     }
     catch (const std::exception &ex)
     {
         std::cerr << "Standard exception: " << ex.what() << std::endl;
-        return -1;
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&randomKeyStr[0], randomKeyStr.size());
+        return HCPABE_ERR_CRYPTO_FAILED;
     }
 }
 
-// AC17decrypt function
 int AC17decrypt(const char *publicKeyFile, const char *privateKeyFile, const char *ciphertextFile, const char *recovertextFile)
 {
+    std::string aesKey;
+    std::string recoveredKeyStr;
+    
     try
     {
         std::string strCiphertextFile(ciphertextFile);
         std::string encodedCiphertext;
-        FileSource fileSource(strCiphertextFile.c_str(), true, new StringSink(encodedCiphertext));
+        CryptoPP::FileSource fileSource(strCiphertextFile.c_str(), true, new CryptoPP::StringSink(encodedCiphertext));
 
         // Giải mã Base64
         std::string decodedCiphertext;
-        StringSource ss1(encodedCiphertext, true, new Base64Decoder(new StringSink(decodedCiphertext)));
+        CryptoPP::StringSource ss1(encodedCiphertext, true, new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedCiphertext)));
 
-        if (decodedCiphertext.size() < AES::BLOCKSIZE)
-            throw std::runtime_error("Invalid ciphertext: too small to contain IV.");
+        // Kiểm tra version byte
+        if (decodedCiphertext.empty())
+            return HCPABE_ERR_CRYPTO_FAILED;
+            
+        uint8_t version = static_cast<uint8_t>(decodedCiphertext[0]);
+        if (version != HybridCPABE::FORMAT_VERSION)
+        {
+            std::cerr << "Unsupported ciphertext format version: " << static_cast<int>(version) << std::endl;
+            return HCPABE_ERR_VERSION_MISMATCH;
+        }
         
-        CryptoPP::byte iv[AES::BLOCKSIZE];
-        std::memcpy(iv, decodedCiphertext.data(), sizeof(iv));
-        uint64_t offset = sizeof(iv);
+        uint64_t offset = 1;  // Skip version byte
+
+        if (decodedCiphertext.size() < offset + HybridCPABE::GCM_IV_SIZE)
+            return HCPABE_ERR_CRYPTO_FAILED;
+        
+        CryptoPP::byte iv[HybridCPABE::GCM_IV_SIZE];
+        std::memcpy(iv, decodedCiphertext.data() + offset, sizeof(iv));
+        offset += sizeof(iv);
+        
         if (decodedCiphertext.size() < offset + sizeof(uint64_t))
-            throw std::runtime_error("Invalid ciphertext: too small to contain encrypted key length.");
+            return HCPABE_ERR_CRYPTO_FAILED;
         uint64_t lenEncryptedKey;
         std::memcpy(&lenEncryptedKey, decodedCiphertext.data() + offset, sizeof(lenEncryptedKey));
         offset += sizeof(lenEncryptedKey);
+        
         if (decodedCiphertext.size() < offset + lenEncryptedKey)
-            throw std::runtime_error("Invalid ciphertext: insufficient size for encrypted key.");
+            return HCPABE_ERR_CRYPTO_FAILED;
         std::string encryptedKeyB = decodedCiphertext.substr(offset, lenEncryptedKey);
         offset += lenEncryptedKey;
         std::string ciphertext = decodedCiphertext.substr(offset);
@@ -380,119 +477,105 @@ int AC17decrypt(const char *publicKeyFile, const char *privateKeyFile, const cha
         // Tải private key
         std::string secretKeyData;
         if (!LoadFile(privateKeyFile, secretKeyData, "Base64"))
-            throw std::runtime_error("Failed to load private key.");
+            return HCPABE_ERR_FILE_NOT_FOUND;
         const void *secretKey = rabe_cp_ac17_secret_key_from_json(secretKeyData.c_str());
         if (!secretKey)
-            throw std::runtime_error("Failed to parse private key.");
+            return HCPABE_ERR_INVALID_KEY;
 
         // Giải mã khóa ngẫu nhiên bằng CP-ABE
         const void *encryptedKey = rabe_cp_ac17_cipher_from_json(encryptedKeyB.c_str());
         if (!encryptedKey)
         {
             rabe_cp_ac17_free_secret_key(secretKey);
-            throw std::runtime_error("Failed to load cipher.");
+            return HCPABE_ERR_CRYPTO_FAILED;
         }
         CBoxedBuffer recoveredKey = rabe_cp_ac17_decrypt(encryptedKey, secretKey);
         if (!recoveredKey.buffer)
         {
             const char *error = rabe_get_thread_last_error();
+            std::cerr << "CP-ABE Decryption failed: " << (error ? error : "Unknown error") << std::endl;
             rabe_cp_ac17_free_secret_key(secretKey);
             rabe_cp_ac17_free_cipher(encryptedKey);
-            throw std::runtime_error(string("CP-ABE Decryption failed: ") + (error ? error : "Unknown error"));
+            return HCPABE_ERR_POLICY_MISMATCH;
         }
+        
         CryptoPP::Integer recoveredRandomKey(reinterpret_cast<const CryptoPP::byte *>(recoveredKey.buffer), recoveredKey.len);
-        SHA3_256 hash;
-        std::string aesKey(hash.DigestSize(), 0);
-        std::string recoveredKeyStr;
-        recoveredRandomKey.Encode(StringSink(recoveredKeyStr).Ref(), recoveredRandomKey.MinEncodedSize());
+        CryptoPP::SHA3_256 hash;
+        aesKey.resize(hash.DigestSize(), 0);
+        recoveredRandomKey.Encode(CryptoPP::StringSink(recoveredKeyStr).Ref(), recoveredRandomKey.MinEncodedSize());
         hash.Update(reinterpret_cast<const CryptoPP::byte *>(recoveredKeyStr.data()), recoveredKeyStr.size());
         hash.Final(reinterpret_cast<CryptoPP::byte *>(&aesKey[0]));
 
         std::string recovered;
-        GCM<AES>::Decryption decryptor;
-        decryptor.SetKeyWithIV(reinterpret_cast<const CryptoPP::byte *>(aesKey.data()), aesKey.size(), iv);
-        AuthenticatedDecryptionFilter df(decryptor, new StringSink(recovered), AuthenticatedDecryptionFilter::DEFAULT_FLAGS);
-        StringSource ss2(ciphertext, true, new Redirector(df));
+        CryptoPP::GCM<CryptoPP::AES>::Decryption decryptor;
+        decryptor.SetKeyWithIV(reinterpret_cast<const CryptoPP::byte *>(aesKey.data()), aesKey.size(), iv, sizeof(iv));
+        CryptoPP::AuthenticatedDecryptionFilter df(decryptor, new CryptoPP::StringSink(recovered), CryptoPP::AuthenticatedDecryptionFilter::DEFAULT_FLAGS);
+        CryptoPP::StringSource ss2(ciphertext, true, new CryptoPP::Redirector(df));
         if (!df.GetLastResult())
-            throw std::runtime_error("Decryption failed: MAC not valid.");
+        {
+            secureWipe(&aesKey[0], aesKey.size());
+            secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
+            rabe_cp_ac17_free_secret_key(secretKey);
+            rabe_cp_ac17_free_cipher(encryptedKey);
+            return HCPABE_ERR_CRYPTO_FAILED;
+        }
 
-        FileSink fileSink(recovertextFile);
+        CryptoPP::FileSink fileSink(recovertextFile);
         fileSink.Put(reinterpret_cast<const CryptoPP::byte *>(recovered.data()), recovered.size());
         std::cout << "Decryption successful!" << std::endl;
-        // Giải phóng bộ nhớ các đối tượng nhạy cảm
+        
+        // Xóa bộ nhớ nhạy cảm và giải phóng
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
         rabe_cp_ac17_free_secret_key(secretKey);
         rabe_cp_ac17_free_cipher(encryptedKey);
-        return 0;
+        
+        return HCPABE_SUCCESS;
     }
     catch (const CryptoPP::Exception &ex)
     {
         std::cerr << "Crypto++ exception: " << ex.what() << std::endl;
-        return -1;
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
+        return HCPABE_ERR_CRYPTO_FAILED;
     }
     catch (const std::exception &ex)
     {
         std::cerr << "Standard exception: " << ex.what() << std::endl;
-        return -1;
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
+        return HCPABE_ERR_CRYPTO_FAILED;
     }
 }
 
-int main(int argc, char *argv[])
+// ============================================================================
+// Buffer-based API Implementations (Placeholder - cần implement đầy đủ)
+// ============================================================================
+
+int AC17encryptBuffer(
+    const unsigned char *publicKey, size_t pkLen,
+    const unsigned char *plaintext, size_t ptLen,
+    const char *policy,
+    unsigned char **ciphertext, size_t *ctLen)
 {
-    if (argc < 2)
-    {
-        std::cout << "Usage: " << argv[0] << " [setup|genkey|encrypt|decrypt]" << std::endl;
-        return 1;
-    }
-    std::string mode = argv[1];
-    try
-    {
-        if (mode == "setup")
-        {
-            if (argc < 3)
-            {
-                std::cerr << "Usage: " << argv[0] << " setup <path_to_save_file>" << std::endl;
-                return 1;
-            }
-            setup(argv[2]);
-        }
-        else if (mode == "genkey")
-        {
-            if (argc < 6)
-            {
-                std::cerr << "Usage: " << argv[0] << " genkey <public_key_file> <master_key_file> <attributes> <private_key_file>" << std::endl;
-                return 1;
-            }
-            generateSecretKey(argv[2], argv[3], argv[4], argv[5]);
-        }
-        else if (mode == "encrypt")
-        {
-            if (argc < 6)
-            {
-                std::cerr << "Usage: " << argv[0] << " encrypt <public_key_file> <plaintext_file> <policy> <ciphertext_file>" << std::endl;
-                return 1;
-            }
-            AC17encrypt(argv[2], argv[3], argv[4], argv[5]);
-        }
-        else if (mode == "decrypt")
-        {
-            if (argc < 6)
-            {
-                std::cerr << "Usage: " << argv[0] << " decrypt <public_key_file> <private_key_file> <ciphertext_file> <recovertext_file>" << std::endl;
-                return 1;
-            }
-            AC17decrypt(argv[2], argv[3], argv[4], argv[5]);
-        }
-        else
-        {
-            std::cerr << "Invalid command: " << mode << std::endl;
-            std::cerr << "Usage: " << argv[0] << " [setup|genkey|encrypt|decrypt]" << std::endl;
-            return 1;
-        }
-    }
-    catch (const std::exception &ex)
-    {
-        std::cerr << "Exception: " << ex.what() << std::endl;
-        return 1;
-    }
-    return 0;
+    // TODO: Implement buffer-based encryption
+    // Tương tự AC17encrypt nhưng làm việc với buffer thay vì file
+    (void)publicKey; (void)pkLen;
+    (void)plaintext; (void)ptLen;
+    (void)policy;
+    (void)ciphertext; (void)ctLen;
+    return HCPABE_ERR_CRYPTO_FAILED;  // Placeholder
+}
+
+int AC17decryptBuffer(
+    const unsigned char *privateKey, size_t skLen,
+    const unsigned char *ciphertext, size_t ctLen,
+    unsigned char **plaintext, size_t *ptLen)
+{
+    // TODO: Implement buffer-based decryption
+    // Tương tự AC17decrypt nhưng làm việc với buffer thay vì file
+    (void)privateKey; (void)skLen;
+    (void)ciphertext; (void)ctLen;
+    (void)plaintext; (void)ptLen;
+    return HCPABE_ERR_CRYPTO_FAILED;  // Placeholder
 }

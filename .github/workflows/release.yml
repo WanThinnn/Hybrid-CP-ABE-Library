@@ -1,0 +1,125 @@
+name: Release Library
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  LIB_NAME: libhybrid-cp-abe
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION="dev"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION}"
+
+      # ========================================================================
+      # Build Linux Package
+      # ========================================================================
+      - name: Prepare Linux package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PACKAGE_NAME="${{ env.LIB_NAME }}_linux_x86_64_v${VERSION}"
+          
+          mkdir -p "${PACKAGE_NAME}/include"
+          mkdir -p "${PACKAGE_NAME}/lib/dynamic-lib"
+          
+          # Copy header file
+          cp src/cpp-sources/include/hybrid-cp-abe.h "${PACKAGE_NAME}/include/"
+          
+          # Copy Linux shared libraries (.so files)
+          find src/cpp-sources/lib/dynamic-lib -name "*.so" -exec cp {} "${PACKAGE_NAME}/lib/dynamic-lib/" \;
+          
+          # Create zip
+          zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
+          
+          echo "Created: ${PACKAGE_NAME}.zip"
+          ls -la "${PACKAGE_NAME}.zip"
+
+      # ========================================================================
+      # Build Windows Package
+      # ========================================================================
+      - name: Prepare Windows package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PACKAGE_NAME="${{ env.LIB_NAME }}_win_x86_64_v${VERSION}"
+          
+          mkdir -p "${PACKAGE_NAME}/include"
+          mkdir -p "${PACKAGE_NAME}/lib/dynamic-lib"
+          
+          # Copy header file
+          cp src/cpp-sources/include/hybrid-cp-abe.h "${PACKAGE_NAME}/include/"
+          
+          # Copy Windows DLL files
+          find src/cpp-sources/lib/dynamic-lib -name "*.dll" -exec cp {} "${PACKAGE_NAME}/lib/dynamic-lib/" \;
+          
+          # Create zip
+          zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
+          
+          echo "Created: ${PACKAGE_NAME}.zip"
+          ls -la "${PACKAGE_NAME}.zip"
+
+      # ========================================================================
+      # Create GitHub Release
+      # ========================================================================
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ${{ env.LIB_NAME }}_linux_x86_64_v${{ steps.version.outputs.version }}.zip
+            ${{ env.LIB_NAME }}_win_x86_64_v${{ steps.version.outputs.version }}.zip
+          body: |
+            # Hybrid CP-ABE Library for Windows/Linux - Version ${{ steps.version.outputs.version }}
+
+            ## Overview
+            - This release introduces an updated implementation of the CP-ABE AC17 (Ciphertext Policy Attribute-Based Encryption) scheme, now integrated with the AES-GCM-256 symmetric encryption algorithm. 
+            - The main objective of this update is to combine the flexible access control of CP-ABE with the high-performance encryption of AES-GCM-256, providing a more secure and efficient solution for data encryption.
+
+            ## Key Features
+            
+            ### Hybrid Encryption:
+            - We use the CP-ABE AC17 scheme to encrypt a very big random symmetric key, which is then used SHA3-256 to hash it for 256-bits AES key.
+            - This approach leverages the access control mechanism of CP-ABE for key management and the high-speed, secure data encryption provided by AES-GCM-256.
+
+            ### Optimized Performance:
+            - The AES-GCM-256 encryption ensures fast and secure encryption of large data files.
+            - The AC17 scheme allows for more flexible encryption policies and fine-grained control over who can access the encrypted content.
+
+            ### Secure Encryption & Decryption:
+            - Encrypted data is protected by both the strength of AES-GCM-256 and the attribute-based access control of CP-ABE.
+            - The decryption process ensures that only users with the correct attribute-based keys can retrieve the AES encryption key and decrypt the data.
+
+            ## Changes in This Release
+            - Now supports Linux!
+            - New name: Hybrid CP-ABE.
+            - Support large input files.
+            - The source code is now more secure.
+            - Added full support for hybrid encryption: combining CP-ABE AC17 and AES-GCM-256 for enhanced security and efficiency.
+            - Improved error handling and debug information to help identify issues during encryption and decryption processes.
+            - Code refactoring to separate CP-ABE encrypted keys and AES-GCM encrypted data, ensuring proper decryption in various environments.
+
+            ## Download
+            - **Linux**: `${{ env.LIB_NAME }}_linux_x86_64_v${{ steps.version.outputs.version }}.zip`
+            - **Windows**: `${{ env.LIB_NAME }}_win_x86_64_v${{ steps.version.outputs.version }}.zip`
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+          generate_release_notes: true
