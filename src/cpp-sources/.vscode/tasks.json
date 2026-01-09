@@ -16,7 +16,7 @@
                 "${workspaceFolder}\\main.cpp",
                 "/I${workspaceFolder}\\include",
                 "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "librabe_ffi.lib",
                 "cryptlib.lib",
                 "bcrypt.lib",
@@ -40,7 +40,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "cl.exe /MD /GS /O2 /Zi /EHsc /c ${workspaceFolder}\\hybrid-cp-abe.cpp /I${workspaceFolder}\\include /Fo:${workspaceFolder}\\hybrid-cp-abe.obj && lib.exe /OUT:${workspaceFolder}\\libhybrid-cp-abe.lib ${workspaceFolder}\\hybrid-cp-abe.obj /LIBPATH:${workspaceFolder}\\lib\\static-lib librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib"
+                "cl.exe /MD /GS /O2 /Zi /EHsc /c ${workspaceFolder}\\hybrid-cp-abe.cpp /I${workspaceFolder}\\include /Fo:${workspaceFolder}\\hybrid-cp-abe.obj && lib.exe /OUT:${workspaceFolder}\\libhybrid-cp-abe.lib ${workspaceFolder}\\hybrid-cp-abe.obj /LIBPATH:${workspaceFolder}\\lib\\static librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib"
             ],
             "problemMatcher": [
                 "$msCompile"
@@ -64,7 +64,7 @@
                 "${workspaceFolder}\\hybrid-cp-abe.cpp",
                 "/I${workspaceFolder}\\include",
                 "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "librabe_ffi.lib",
                 "cryptlib.lib",
                 "bcrypt.lib",
@@ -92,7 +92,7 @@
                 "${file}",
                 "/I${workspaceFolder}\\include",
                 "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "librabe_ffi.lib",
                 "bcrypt.lib",
                 "advapi32.lib",
@@ -120,7 +120,7 @@
                 "${file}",
                 "/I${workspaceFolder}\\include",
                 "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "libac17_gcm256.lib",
                 "/MACHINE:X64"
             ],

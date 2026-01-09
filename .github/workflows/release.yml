@@ -75,8 +75,8 @@ jobs:
           cp -r src/cpp-sources/include/rabe "${PACKAGE_NAME}/include/"
           
           # Copy ONLY libhybrid-cp-abe libraries for Linux
-          cp src/cpp-sources/lib/dynamic-lib/libhybrid-cp-abe.so "${PACKAGE_NAME}/lib/" 2>/dev/null || true
-          cp src/cpp-sources/lib/static-lib/libhybrid-cp-abe.a "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          cp src/cpp-sources/lib/dynamic/libhybrid-cp-abe.so "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          cp src/cpp-sources/lib/static/libhybrid-cp-abe.a "${PACKAGE_NAME}/lib/" 2>/dev/null || true
           
           # Create zip
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
@@ -102,8 +102,8 @@ jobs:
           cp -r src/cpp-sources/include/rabe "${PACKAGE_NAME}/include/"
           
           # Copy ONLY libhybrid-cp-abe libraries for Windows
-          cp src/cpp-sources/lib/dynamic-lib/libhybrid-cp-abe.dll "${PACKAGE_NAME}/lib/" 2>/dev/null || true
-          cp src/cpp-sources/lib/static-lib/libhybrid-cp-abe.lib "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          cp src/cpp-sources/lib/dynamic/libhybrid-cp-abe.dll "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          cp src/cpp-sources/lib/static/libhybrid-cp-abe.lib "${PACKAGE_NAME}/lib/" 2>/dev/null || true
           
           # Create zip
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"

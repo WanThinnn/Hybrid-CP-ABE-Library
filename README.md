@@ -42,7 +42,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
                 "${file}",
                 "/I${workspaceFolder}\\include",
                 "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "librabe_ffi.lib",
                 "cryptlib.lib",
                 "bcrypt.lib",
@@ -71,7 +71,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
                 "${file}",
                 "/I${workspaceFolder}\\include",
                 "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "libac17_gcm256.lib",
                 "/MACHINE:X64"
             ],
@@ -111,7 +111,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
             "args": [
                 "/OUT:${fileDirname}\\${fileBasenameNoExtension}.lib",
                 "${fileDirname}\\${fileBasenameNoExtension}.obj",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "librabe_ffi.lib",
                 "cryptlib.lib",
                 "bcrypt.lib",
@@ -143,7 +143,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
                 "${file}",
                 "/I${workspaceFolder}\\include",
                 "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static-lib",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "librabe_ffi.lib",
                 "cryptlib.lib",
                 "bcrypt.lib",
@@ -200,7 +200,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
                 "${file}",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
-                "-L${workspaceFolder}/lib/static-lib",
+                "-L${workspaceFolder}/lib/static",
                 "-lcryptopp",
                 "-lrabe_ffi"
             ],
@@ -220,7 +220,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
                 "${file}",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}",
-                "-L${workspaceFolder}/lib/static-lib",
+                "-L${workspaceFolder}/lib/static",
                 "-lhybrid-cp-abe"
             ],
             "problemMatcher": ["$gcc"],
@@ -255,7 +255,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
             "command": "bash",
             "args": [
                 "-c",
-                "rm -rf \"${workspaceFolder}/tmp_extracted\" && mkdir -p \"${workspaceFolder}/tmp_extracted\" && cd \"${workspaceFolder}/lib/static-lib\" && ar x libcryptopp.a && ar x librabe_ffi.a && mv *.o \"${workspaceFolder}/tmp_extracted/\""
+                "rm -rf \"${workspaceFolder}/tmp_extracted\" && mkdir -p \"${workspaceFolder}/tmp_extracted\" && cd \"${workspaceFolder}/lib/static\" && ar x libcryptopp.a && ar x librabe_ffi.a && mv *.o \"${workspaceFolder}/tmp_extracted/\""
             ],
             "problemMatcher": [],
             "group": "build",
@@ -267,7 +267,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
             "command": "bash",
             "args": [
                 "-c",
-                "ar rcs \"${workspaceFolder}/lib/static-lib/libhybrid-cp-abe.a\" \"${fileDirname}/${fileBasenameNoExtension}.o\" \"${workspaceFolder}/tmp_extracted/\"*.o && rm -rf \"${workspaceFolder}/tmp_extracted\""
+                "ar rcs \"${workspaceFolder}/lib/static/libhybrid-cp-abe.a\" \"${fileDirname}/${fileBasenameNoExtension}.o\" \"${workspaceFolder}/tmp_extracted/\"*.o && rm -rf \"${workspaceFolder}/tmp_extracted\""
             ],
             "problemMatcher": ["$gcc"],
             "group": "build",
@@ -288,7 +288,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
                 "-shared",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}.so",
-                "-L${workspaceFolder}/lib/static-lib",
+                "-L${workspaceFolder}/lib/static",
                 "-lhybrid-cp-abe",
                 "-lcryptopp",
                 "-lrabe_ffi"
