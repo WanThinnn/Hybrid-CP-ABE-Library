@@ -5,6 +5,17 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      build_win:
+        description: 'Build Windows package'
+        required: false
+        type: boolean
+        default: true
+      build_linux:
+        description: 'Build Linux package'
+        required: false
+        type: boolean
+        default: true
 
 env:
   LIB_NAME: libhybrid-cp-abe
@@ -19,9 +30,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get version from tag
-        id: version
+      - name: Get version and platform flags
+        id: config
         run: |
+          # Get version
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             VERSION="${{ github.ref_name }}"
             VERSION="${VERSION#v}"
@@ -30,13 +42,29 @@ jobs:
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Version: ${VERSION}"
+          
+          # Get platform flags (default: both if tag push, otherwise use inputs)
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # Tag push: build both by default
+            BUILD_WIN=true
+            BUILD_LINUX=true
+          else
+            # workflow_dispatch: use inputs
+            BUILD_WIN="${{ github.event.inputs.build_win }}"
+            BUILD_LINUX="${{ github.event.inputs.build_linux }}"
+          fi
+          echo "build_win=${BUILD_WIN}" >> $GITHUB_OUTPUT
+          echo "build_linux=${BUILD_LINUX}" >> $GITHUB_OUTPUT
+          echo "Build Windows: ${BUILD_WIN}"
+          echo "Build Linux: ${BUILD_LINUX}"
 
       # ========================================================================
       # Build Linux Package
       # ========================================================================
       - name: Prepare Linux package
+        if: steps.config.outputs.build_linux == 'true'
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.config.outputs.version }}"
           PACKAGE_NAME="${{ env.LIB_NAME }}_linux_x86_64_v${VERSION}"
           
           mkdir -p "${PACKAGE_NAME}/include"
@@ -46,11 +74,9 @@ jobs:
           cp src/cpp-sources/include/hybrid-cp-abe.h "${PACKAGE_NAME}/include/"
           cp -r src/cpp-sources/include/rabe "${PACKAGE_NAME}/include/"
           
-          # Copy Linux dynamic libraries (.so files)
-          find src/cpp-sources/lib -name "*.so" -exec cp {} "${PACKAGE_NAME}/lib/" \; 2>/dev/null || true
-          
-          # Copy Linux static libraries (.a files)
-          find src/cpp-sources/lib -name "*.a" -exec cp {} "${PACKAGE_NAME}/lib/" \; 2>/dev/null || true
+          # Copy ONLY libhybrid-cp-abe libraries for Linux
+          cp src/cpp-sources/lib/dynamic-lib/libhybrid-cp-abe.so "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          cp src/cpp-sources/lib/static-lib/libhybrid-cp-abe.a "${PACKAGE_NAME}/lib/" 2>/dev/null || true
           
           # Create zip
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
@@ -63,8 +89,9 @@ jobs:
       # Build Windows Package
       # ========================================================================
       - name: Prepare Windows package
+        if: steps.config.outputs.build_win == 'true'
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.config.outputs.version }}"
           PACKAGE_NAME="${{ env.LIB_NAME }}_win_x86_64_v${VERSION}"
           
           mkdir -p "${PACKAGE_NAME}/include"
@@ -74,11 +101,9 @@ jobs:
           cp src/cpp-sources/include/hybrid-cp-abe.h "${PACKAGE_NAME}/include/"
           cp -r src/cpp-sources/include/rabe "${PACKAGE_NAME}/include/"
           
-          # Copy Windows dynamic libraries (.dll files)
-          find src/cpp-sources/lib -name "*.dll" -exec cp {} "${PACKAGE_NAME}/lib/" \; 2>/dev/null || true
-          
-          # Copy Windows static libraries (.lib files)
-          find src/cpp-sources/lib -name "*.lib" -exec cp {} "${PACKAGE_NAME}/lib/" \; 2>/dev/null || true
+          # Copy ONLY libhybrid-cp-abe libraries for Windows
+          cp src/cpp-sources/lib/dynamic-lib/libhybrid-cp-abe.dll "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          cp src/cpp-sources/lib/static-lib/libhybrid-cp-abe.lib "${PACKAGE_NAME}/lib/" 2>/dev/null || true
           
           # Create zip
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
@@ -95,10 +120,11 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            ${{ env.LIB_NAME }}_linux_x86_64_v${{ steps.version.outputs.version }}.zip
-            ${{ env.LIB_NAME }}_win_x86_64_v${{ steps.version.outputs.version }}.zip
+            ${{ env.LIB_NAME }}_linux_x86_64_v${{ steps.config.outputs.version }}.zip
+            ${{ env.LIB_NAME }}_win_x86_64_v${{ steps.config.outputs.version }}.zip
+          fail_on_unmatched_files: false
           body: |
-            # Hybrid CP-ABE Library for Windows/Linux - Version ${{ steps.version.outputs.version }}
+            # Hybrid CP-ABE Library for Windows/Linux - Version ${{ steps.config.outputs.version }}
 
             ## Overview
             - This release introduces an updated implementation of the CP-ABE AC17 (Ciphertext Policy Attribute-Based Encryption) scheme, now integrated with the AES-GCM-256 symmetric encryption algorithm. 
@@ -128,8 +154,8 @@ jobs:
             - Code refactoring to separate CP-ABE encrypted keys and AES-GCM encrypted data, ensuring proper decryption in various environments.
 
             ## Download
-            - **Linux**: `${{ env.LIB_NAME }}_linux_x86_64_v${{ steps.version.outputs.version }}.zip`
-            - **Windows**: `${{ env.LIB_NAME }}_win_x86_64_v${{ steps.version.outputs.version }}.zip`
+            - **Linux**: `${{ env.LIB_NAME }}_linux_x86_64_v${{ steps.config.outputs.version }}.zip`
+            - **Windows**: `${{ env.LIB_NAME }}_win_x86_64_v${{ steps.config.outputs.version }}.zip`
           draft: false
           prerelease: ${{ contains(github.ref_name, 'rc') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
           generate_release_notes: true
