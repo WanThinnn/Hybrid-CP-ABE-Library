@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
                 std::cerr << "Usage: " << argv[0] << " encrypt <public_key_file> <plaintext_file> <policy> <ciphertext_file>" << std::endl;
                 return 1;
             }
-            result = AC17encrypt(argv[2], argv[3], argv[4], argv[5]);
+            result = hybrid_cpabe_encrypt(argv[2], argv[3], argv[4], argv[5]);
         }
         else if (mode == "decrypt")
         {
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
                 std::cerr << "Usage: " << argv[0] << " decrypt <private_key_file> <ciphertext_file> <recovertext_file>" << std::endl;
                 return 1;
             }
-            result = AC17decrypt(argv[2], argv[3], argv[4]);
+            result = hybrid_cpabe_decrypt(argv[2], argv[3], argv[4]);
         }
         else
         {

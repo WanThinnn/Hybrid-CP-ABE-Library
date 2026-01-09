@@ -63,13 +63,13 @@ extern "C"
                                    const char *privateKeyFile);
     
     // Mã hóa file với chính sách truy cập
-    LIB_API int AC17encrypt(const char *publicKeyFile, 
+    LIB_API int hybrid_cpabe_encrypt(const char *publicKeyFile, 
                             const char *plaintextFile, 
                             const char *policy, 
                             const char *ciphertextFile);
     
     // Giải mã file (cần thuộc tính thỏa mãn policy)
-    LIB_API int AC17decrypt(const char *privateKeyFile, 
+    LIB_API int hybrid_cpabe_decrypt(const char *privateKeyFile, 
                             const char *ciphertextFile, 
                             const char *recovertextFile);
 
@@ -78,7 +78,7 @@ extern "C"
     // ========================================================================
     
     // Mã hóa từ buffer
-    LIB_API int AC17encryptBuffer(
+    LIB_API int hybrid_cpabe_encryptBuffer(
         const unsigned char *publicKey, size_t pkLen,
         const unsigned char *plaintext, size_t ptLen,
         const char *policy,
@@ -86,7 +86,7 @@ extern "C"
     );
     
     // Giải mã từ buffer
-    LIB_API int AC17decryptBuffer(
+    LIB_API int hybrid_cpabe_decryptBuffer(
         const unsigned char *privateKey, size_t skLen,
         const unsigned char *ciphertext, size_t ctLen,
         unsigned char **plaintext, size_t *ptLen

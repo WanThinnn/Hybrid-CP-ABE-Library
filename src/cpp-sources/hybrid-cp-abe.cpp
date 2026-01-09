@@ -337,7 +337,7 @@ int generateSecretKey(const char *masterKeyFile, const char *attributes, const c
     }
 }
 
-int AC17encrypt(const char *publicKeyFile, const char *plaintextFile, const char *policy, const char *ciphertextFile)
+int hybrid_cpabe_encrypt(const char *publicKeyFile, const char *plaintextFile, const char *policy, const char *ciphertextFile)
 {
     std::string aesKey;
     std::string randomKeyStr;
@@ -452,7 +452,7 @@ int AC17encrypt(const char *publicKeyFile, const char *plaintextFile, const char
     }
 }
 
-int AC17decrypt(const char *privateKeyFile, const char *ciphertextFile, const char *recovertextFile)
+int hybrid_cpabe_decrypt(const char *privateKeyFile, const char *ciphertextFile, const char *recovertextFile)
 {
     std::string aesKey;
     std::string recoveredKeyStr;
@@ -596,14 +596,14 @@ int AC17decrypt(const char *privateKeyFile, const char *ciphertextFile, const ch
 // Buffer-based API Implementations (Placeholder - cần implement đầy đủ)
 // ============================================================================
 
-int AC17encryptBuffer(
+int hybrid_cpabe_encryptBuffer(
     const unsigned char *publicKey, size_t pkLen,
     const unsigned char *plaintext, size_t ptLen,
     const char *policy,
     unsigned char **ciphertext, size_t *ctLen)
 {
     // TODO: Implement buffer-based encryption
-    // Tương tự AC17encrypt nhưng làm việc với buffer thay vì file
+    // Tương tự hybrid_cpabe_encrypt nhưng làm việc với buffer thay vì file
     (void)publicKey; (void)pkLen;
     (void)plaintext; (void)ptLen;
     (void)policy;
@@ -611,13 +611,13 @@ int AC17encryptBuffer(
     return HCPABE_ERR_CRYPTO_FAILED;  // Placeholder
 }
 
-int AC17decryptBuffer(
+int hybrid_cpabe_decryptBuffer(
     const unsigned char *privateKey, size_t skLen,
     const unsigned char *ciphertext, size_t ctLen,
     unsigned char **plaintext, size_t *ptLen)
 {
     // TODO: Implement buffer-based decryption
-    // Tương tự AC17decrypt nhưng làm việc với buffer thay vì file
+    // Tương tự hybrid_cpabe_decrypt nhưng làm việc với buffer thay vì file
     (void)privateKey; (void)skLen;
     (void)ciphertext; (void)ctLen;
     (void)plaintext; (void)ptLen;

@@ -35,10 +35,10 @@ extern "C"
         // Phương thức generateSecretKey
         int generateSecretKey(const char *publicKeyFile, const char *masterKeyFile, const char *attributes, const char *privateKeyFile);
 
-        // Phương thức AC17encrypt
+        // Phương thức hybrid_cpabe_encrypt
         int encrypt(const char *publicKeyFile, const char *plaintextFile, const char *policy, const char *ciphertextFile);
 
-        // Phương thức AC17decrypt
+        // Phương thức hybrid_cpabe_decrypt
         int decrypt(const char *publicKeyFile, const char *privateKeyFile, const char *ciphertextFile, const char *recovertextFile);
     };
 }
