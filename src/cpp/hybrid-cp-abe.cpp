@@ -245,8 +245,8 @@ int setup(const char *path)
             bool masterKeySaved = SaveFile(strPath + "/cpabe_msk.key", masterKeyJson, strFileFormat);
             bool publicKeySaved = SaveFile(strPath + "/cpabe_pk.key", publicKeyJson, strFileFormat);
             
-            free(masterKeyJson);
-            free(publicKeyJson);
+            rabe_free_json(masterKeyJson);
+            rabe_free_json(publicKeyJson);
             rabe_ac17_free_master_key(setupResult.master_key);
             rabe_ac17_free_public_key(setupResult.public_key);
             
@@ -306,7 +306,7 @@ int generateSecretKey(const char *masterKeyFile, const char *attributes, const c
             
             // Giải phóng và xóa bộ nhớ nhạy cảm
             secureWipe(secretKeyJson, std::strlen(secretKeyJson));
-            free(secretKeyJson);
+            rabe_free_json(secretKeyJson);
             rabe_cp_ac17_free_secret_key(secretKey);
             
             if (!saved)
@@ -320,13 +320,13 @@ int generateSecretKey(const char *masterKeyFile, const char *attributes, const c
         }
         else
         {
-            free(secretKeyJson);
+            rabe_free_json(secretKeyJson);
             rabe_cp_ac17_free_secret_key(secretKey);
             return HCPABE_ERR_UNSUPPORTED_FORMAT;
         }
         // Giải phóng và xóa bộ nhớ nhạy cảm
         secureWipe(secretKeyJson, std::strlen(secretKeyJson));
-        free(secretKeyJson);
+        rabe_free_json(secretKeyJson);
         rabe_cp_ac17_free_secret_key(secretKey);
         return HCPABE_SUCCESS;
     }
@@ -378,7 +378,7 @@ int hybrid_cpabe_encrypt(const char *publicKeyFile, const char *plaintextFile, c
         std::string encryptedKeyB = encryptedKeyJson;
         rabe_cp_ac17_free_cipher(encryptedKey);
         rabe_ac17_free_public_key(publicKey);
-        free(encryptedKeyJson);
+        rabe_free_json(encryptedKeyJson);
 
         // Tạo khóa AES từ randomKey (hash bằng SHA3-256)
         CryptoPP::SHA3_256 hash;
@@ -530,6 +530,7 @@ int hybrid_cpabe_decrypt(const char *privateKeyFile, const char *ciphertextFile,
         }
         
         CryptoPP::Integer recoveredRandomKey(reinterpret_cast<const CryptoPP::byte *>(recoveredKey.buffer), recoveredKey.len);
+        rabe_free_boxed_buffer(recoveredKey);
         CryptoPP::SHA3_256 hash;
         aesKey.resize(hash.DigestSize(), 0);
         recoveredRandomKey.Encode(CryptoPP::StringSink(recoveredKeyStr).Ref(), recoveredRandomKey.MinEncodedSize());
@@ -602,13 +603,96 @@ int hybrid_cpabe_encryptBuffer(
     const char *policy,
     unsigned char **ciphertext, size_t *ctLen)
 {
-    // TODO: Implement buffer-based encryption
-    // Tương tự hybrid_cpabe_encrypt nhưng làm việc với buffer thay vì file
-    (void)publicKey; (void)pkLen;
-    (void)plaintext; (void)ptLen;
-    (void)policy;
-    (void)ciphertext; (void)ctLen;
-    return HCPABE_ERR_CRYPTO_FAILED;  // Placeholder
+    std::string aesKey;
+    std::string randomKeyStr;
+    
+    try
+    {
+        if (!publicKey || !plaintext || !policy || !ciphertext || !ctLen)
+            return HCPABE_ERR_INVALID_PARAM;
+            
+        CryptoPP::AutoSeededRandomPool prng;
+        CryptoPP::Integer randomKey(prng, 12288);
+        randomKey.Encode(CryptoPP::StringSink(randomKeyStr).Ref(), randomKey.MinEncodedSize());
+
+        // Parse public key from buffer (JSON string)
+        std::string pkStr(reinterpret_cast<const char*>(publicKey), pkLen);
+        std::string decodedPkStr;
+        CryptoPP::StringSource ss(pkStr, true,
+            new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedPkStr)));
+        const void *pkObj = rabe_ac17_public_key_from_json(decodedPkStr.c_str());
+        if (!pkObj)
+            return HCPABE_ERR_INVALID_KEY;
+
+        std::string jsonPolicy = ensureJsonString(policy);
+        const void *encryptedKey = rabe_cp_ac17_encrypt(pkObj, jsonPolicy.c_str(), randomKeyStr.c_str(), randomKeyStr.size());
+        if (!encryptedKey)
+        {
+            rabe_ac17_free_public_key(pkObj);
+            return HCPABE_ERR_CRYPTO_FAILED;
+        }
+        
+        char *encryptedKeyJson = rabe_cp_ac17_cipher_to_json(encryptedKey);
+        if (!encryptedKeyJson)
+        {
+            rabe_cp_ac17_free_cipher(encryptedKey);
+            rabe_ac17_free_public_key(pkObj);
+            return HCPABE_ERR_CRYPTO_FAILED;
+        }
+        std::string encryptedKeyB = encryptedKeyJson;
+        rabe_cp_ac17_free_cipher(encryptedKey);
+        rabe_ac17_free_public_key(pkObj);
+        rabe_free_json(encryptedKeyJson);
+
+        // AES Key generation
+        CryptoPP::SHA3_256 hash;
+        aesKey.resize(hash.DigestSize(), 0);
+        hash.Update(reinterpret_cast<const CryptoPP::byte *>(randomKeyStr.data()), randomKeyStr.size());
+        hash.Final(reinterpret_cast<CryptoPP::byte *>(&aesKey[0]));
+
+        // AES-GCM Encryption
+        CryptoPP::GCM<CryptoPP::AES>::Encryption aes_gcm;
+        CryptoPP::SecByteBlock key(reinterpret_cast<const CryptoPP::byte *>(aesKey.data()), aesKey.size());
+        CryptoPP::byte iv[HybridCPABE::GCM_IV_SIZE];
+        prng.GenerateBlock(iv, sizeof(iv));
+        aes_gcm.SetKeyWithIV(key, key.size(), iv, sizeof(iv));
+
+        std::string aesCiphertext;
+        CryptoPP::AuthenticatedEncryptionFilter ef(aes_gcm, new CryptoPP::StringSink(aesCiphertext));
+        ef.ChannelPut(CryptoPP::DEFAULT_CHANNEL, plaintext, ptLen);
+        ef.ChannelMessageEnd(CryptoPP::DEFAULT_CHANNEL);
+
+        // Combine parts
+        std::string combined;
+        combined.push_back(static_cast<char>(HybridCPABE::FORMAT_VERSION));
+        combined.append(reinterpret_cast<const char *>(iv), sizeof(iv));
+        uint64_t lenEncryptedKey = encryptedKeyB.size();
+        combined.append(reinterpret_cast<const char *>(&lenEncryptedKey), sizeof(lenEncryptedKey));
+        combined.append(encryptedKeyB);
+        combined.append(aesCiphertext);
+
+        // Allocate and copy back
+        *ctLen = combined.size();
+        *ciphertext = (unsigned char *)malloc(*ctLen);
+        if (!*ciphertext)
+        {
+            secureWipe(&aesKey[0], aesKey.size());
+            secureWipe(&randomKeyStr[0], randomKeyStr.size());
+            return HCPABE_ERR_MEMORY;
+        }
+        std::memcpy(*ciphertext, combined.data(), *ctLen);
+
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&randomKeyStr[0], randomKeyStr.size());
+        return HCPABE_SUCCESS;
+    }
+    catch (const std::exception &ex)
+    {
+        std::cerr << "Buffer encryption exception: " << ex.what() << std::endl;
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&randomKeyStr[0], randomKeyStr.size());
+        return HCPABE_ERR_CRYPTO_FAILED;
+    }
 }
 
 int hybrid_cpabe_decryptBuffer(
@@ -616,10 +700,118 @@ int hybrid_cpabe_decryptBuffer(
     const unsigned char *ciphertext, size_t ctLen,
     unsigned char **plaintext, size_t *ptLen)
 {
-    // TODO: Implement buffer-based decryption
-    // Tương tự hybrid_cpabe_decrypt nhưng làm việc với buffer thay vì file
-    (void)privateKey; (void)skLen;
-    (void)ciphertext; (void)ctLen;
-    (void)plaintext; (void)ptLen;
-    return HCPABE_ERR_CRYPTO_FAILED;  // Placeholder
+    std::string aesKey;
+    std::string recoveredKeyStr;
+    
+    try
+    {
+        if (!privateKey || !ciphertext || !plaintext || !ptLen)
+            return HCPABE_ERR_INVALID_PARAM;
+            
+        std::string decodedCiphertext(reinterpret_cast<const char*>(ciphertext), ctLen);
+
+        if (decodedCiphertext.empty())
+            return HCPABE_ERR_CRYPTO_FAILED;
+            
+        // Check Version
+        uint8_t version = static_cast<uint8_t>(decodedCiphertext[0]);
+        if (version != HybridCPABE::FORMAT_VERSION)
+            return HCPABE_ERR_VERSION_MISMATCH;
+            
+        uint64_t offset = 1;
+        if (decodedCiphertext.size() < offset + HybridCPABE::GCM_IV_SIZE)
+            return HCPABE_ERR_CRYPTO_FAILED;
+        
+        CryptoPP::byte iv[HybridCPABE::GCM_IV_SIZE];
+        std::memcpy(iv, decodedCiphertext.data() + offset, sizeof(iv));
+        offset += sizeof(iv);
+        
+        if (decodedCiphertext.size() < offset + sizeof(uint64_t))
+            return HCPABE_ERR_CRYPTO_FAILED;
+        uint64_t lenEncryptedKey;
+        std::memcpy(&lenEncryptedKey, decodedCiphertext.data() + offset, sizeof(lenEncryptedKey));
+        offset += sizeof(lenEncryptedKey);
+        
+        if (decodedCiphertext.size() < offset + lenEncryptedKey)
+            return HCPABE_ERR_CRYPTO_FAILED;
+        std::string encryptedKeyB = decodedCiphertext.substr(offset, lenEncryptedKey);
+        offset += lenEncryptedKey;
+        std::string aesCiphertext = decodedCiphertext.substr(offset);
+
+        // Load private key
+        std::string skStr(reinterpret_cast<const char*>(privateKey), skLen);
+        std::string decodedSkStr;
+        CryptoPP::StringSource ss(skStr, true,
+            new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedSkStr)));
+        const void *secretKey = rabe_cp_ac17_secret_key_from_json(decodedSkStr.c_str());
+        if (!secretKey)
+            return HCPABE_ERR_INVALID_KEY;
+
+        const void *encryptedKeyObj = rabe_cp_ac17_cipher_from_json(encryptedKeyB.c_str());
+        if (!encryptedKeyObj)
+        {
+            rabe_cp_ac17_free_secret_key(secretKey);
+            return HCPABE_ERR_CRYPTO_FAILED;
+        }
+        
+        CBoxedBuffer recoveredKey = rabe_cp_ac17_decrypt(encryptedKeyObj, secretKey);
+        if (!recoveredKey.buffer)
+        {
+            rabe_cp_ac17_free_secret_key(secretKey);
+            rabe_cp_ac17_free_cipher(encryptedKeyObj);
+            return HCPABE_ERR_POLICY_MISMATCH;
+        }
+        
+        CryptoPP::Integer recoveredRandomKey(reinterpret_cast<const CryptoPP::byte *>(recoveredKey.buffer), recoveredKey.len);
+        rabe_free_boxed_buffer(recoveredKey);
+        CryptoPP::SHA3_256 hash;
+        aesKey.resize(hash.DigestSize(), 0);
+        recoveredRandomKey.Encode(CryptoPP::StringSink(recoveredKeyStr).Ref(), recoveredRandomKey.MinEncodedSize());
+        hash.Update(reinterpret_cast<const CryptoPP::byte *>(recoveredKeyStr.data()), recoveredKeyStr.size());
+        hash.Final(reinterpret_cast<CryptoPP::byte *>(&aesKey[0]));
+
+        // AES-GCM Decryption
+        std::string recovered;
+        CryptoPP::GCM<CryptoPP::AES>::Decryption decryptor;
+        decryptor.SetKeyWithIV(reinterpret_cast<const CryptoPP::byte *>(aesKey.data()), aesKey.size(), iv, sizeof(iv));
+        
+        CryptoPP::AuthenticatedDecryptionFilter df(decryptor, new CryptoPP::StringSink(recovered), CryptoPP::AuthenticatedDecryptionFilter::DEFAULT_FLAGS);
+        CryptoPP::StringSource ss2(aesCiphertext, true, new CryptoPP::Redirector(df));
+        
+        if (!df.GetLastResult())
+        {
+            secureWipe(&aesKey[0], aesKey.size());
+            secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
+            rabe_cp_ac17_free_secret_key(secretKey);
+            rabe_cp_ac17_free_cipher(encryptedKeyObj);
+            return HCPABE_ERR_CRYPTO_FAILED;
+        }
+
+        // Output plaintext
+        *ptLen = recovered.size();
+        *plaintext = (unsigned char *)malloc(*ptLen);
+        if (!*plaintext)
+        {
+            secureWipe(&aesKey[0], aesKey.size());
+            secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
+            rabe_cp_ac17_free_secret_key(secretKey);
+            rabe_cp_ac17_free_cipher(encryptedKeyObj);
+            return HCPABE_ERR_MEMORY;
+        }
+        std::memcpy(*plaintext, recovered.data(), *ptLen);
+
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
+        rabe_cp_ac17_free_secret_key(secretKey);
+        rabe_cp_ac17_free_cipher(encryptedKeyObj);
+        
+        return HCPABE_SUCCESS;
+    }
+    catch (const std::exception &ex)
+    {
+        std::cerr << "Buffer decryption exception: " << ex.what() << std::endl;
+        secureWipe(&aesKey[0], aesKey.size());
+        secureWipe(&recoveredKeyStr[0], recoveredKeyStr.size());
+        return HCPABE_ERR_CRYPTO_FAILED;
+    }
 }

@@ -11,7 +11,10 @@
                 "${file}",
                 "-o", "${fileDirname}/${fileBasenameNoExtension}",
                 "-L${workspaceFolder}/lib/static",
-                "-lhybrid-cp-abe"
+                "-lhybrid-cp-abe",
+                "-lrabe_ffi",
+                "-lcryptopp",
+                "-lpthread"
             ],
             "problemMatcher": ["$gcc"],
             "group": "build",
@@ -40,14 +43,14 @@
             "command": "bash",
             "args": [
                 "-c",
-                "echo 'Compiling...' && g++ -O2 -g -Wall -c \"${workspaceFolder}/hybrid-cp-abe.cpp\" -I\"${workspaceFolder}/include\" -fPIC -o \"${workspaceFolder}/hybrid-cp-abe.o\" && echo 'Extracting dependencies...' && rm -rf \"${workspaceFolder}/tmp_extracted\" && mkdir -p \"${workspaceFolder}/tmp_extracted\" && cd \"${workspaceFolder}/lib/static\" && ar x libcryptopp.a && ar x librabe_ffi.a && mv *.o \"${workspaceFolder}/tmp_extracted/\" && echo 'Archiving...' && ar rcs \"${workspaceFolder}/lib/static/libhybrid-cp-abe.a\" \"${workspaceFolder}/hybrid-cp-abe.o\" \"${workspaceFolder}/tmp_extracted/\"*.o && echo 'Cleaning up...' && rm -rf \"${workspaceFolder}/tmp_extracted\" \"${workspaceFolder}/hybrid-cp-abe.o\" && echo 'Done! Output at lib/static/libhybrid-cp-abe.a'"
+                "g++ -O2 -g -Wall -c \"${workspaceFolder}/hybrid-cp-abe.cpp\" -I\"${workspaceFolder}/include\" -fPIC -o \"${workspaceFolder}/lib/static/hybrid-cp-abe.o\" && cd \"${workspaceFolder}/lib/static\" && ar rcs libhybrid-cp-abe.a hybrid-cp-abe.o libcryptopp.a librabe_ffi.a && rm -f hybrid-cp-abe.o"
             ],
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "Build static library (libhybrid-cp-abe.a) and clean up temporary .o files"
+               "detail": "Build static library (libhybrid-cp-abe.a) and clean up temporary .o files"
         }
     ]
 }

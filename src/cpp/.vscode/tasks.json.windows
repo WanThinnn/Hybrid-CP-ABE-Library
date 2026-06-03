@@ -3,7 +3,7 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "Build Hybrid CP-ABE CLI Executable",
+            "label": "1. Build executable (.exe)",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -11,14 +11,12 @@
                 "/O2",
                 "/Zi",
                 "/EHsc",
-                "/Fe:${workspaceFolder}\\hybrid-cp-abe.exe",
-                "${workspaceFolder}\\hybrid-cp-abe.cpp",
-                "${workspaceFolder}\\main.cpp",
+                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "${file}",
                 "/I${workspaceFolder}\\include",
                 "/link",
                 "/LIBPATH:${workspaceFolder}\\lib\\static",
-                "librabe_ffi.lib",
-                "cryptlib.lib",
+                "libhybrid-cp-abe.lib",
                 "bcrypt.lib",
                 "advapi32.lib",
                 "ntdll.lib",
@@ -28,29 +26,12 @@
             "problemMatcher": [
                 "$msCompile"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "detail": "Build CLI executable from hybrid-cp-abe.cpp + main.cpp"
-        },
-        {
-            "type": "shell",
-            "label": "Build Hybrid CP-ABE Static Library (.lib)",
-            "command": "cmd",
-            "args": [
-                "/c",
-                "cl.exe /MD /GS /O2 /Zi /EHsc /c ${workspaceFolder}\\hybrid-cp-abe.cpp /I${workspaceFolder}\\include /Fo:${workspaceFolder}\\hybrid-cp-abe.obj && lib.exe /OUT:${workspaceFolder}\\libhybrid-cp-abe.lib ${workspaceFolder}\\hybrid-cp-abe.obj /LIBPATH:${workspaceFolder}\\lib\\static librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib"
-            ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
             "group": "build",
-            "detail": "Build static library from hybrid-cp-abe.cpp only (no main.cpp)"
+            "detail": "Compile currently open file and link with libhybrid-cp-abe.lib"
         },
         {
             "type": "shell",
-            "label": "Build Hybrid CP-ABE DLL",
+            "label": "2. Build shared library (.dll)",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -60,7 +41,7 @@
                 "/EHsc",
                 "/LD",
                 "/DBUILD_DLL",
-                "/Fe:${workspaceFolder}\\hybrid-cp-abe.dll",
+                "/Fe:${workspaceFolder}\\lib\\dynamic\\libhybrid-cp-abe.dll",
                 "${workspaceFolder}\\hybrid-cp-abe.cpp",
                 "/I${workspaceFolder}\\include",
                 "/link",
@@ -76,71 +57,22 @@
                 "$msCompile"
             ],
             "group": "build",
-            "detail": "Build DLL from hybrid-cp-abe.cpp only (no main.cpp)"
+            "detail": "Build shared library (libhybrid-cp-abe.dll)"
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build single file executable",
-            "command": "cl.exe",
-            "args": [
-                "/MD",
-                "/GS",
-                "/O2",
-                "/Zi",
-                "/EHsc",
-                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "${file}",
-                "/I${workspaceFolder}\\include",
-                "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static",
-                "librabe_ffi.lib",
-                "bcrypt.lib",
-                "advapi32.lib",
-                "ntdll.lib",
-                "Ws2_32.lib",
-                "/MACHINE:X64"
-            ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": "build",
-            "detail": "Build single file as executable (for testing)"
-        },
-        {
-            "type": "shell",
-            "label": "C/C++: cl.exe build executable for hybrid CP-ABE (legacy)",
-            "command": "cl.exe",
-            "args": [
-                "/MD",
-                "/GS",
-                "/O2",
-                "/Zi",
-                "/EHsc",
-                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "${file}",
-                "/I${workspaceFolder}\\include",
-                "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static",
-                "libac17_gcm256.lib",
-                "/MACHINE:X64"
-            ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": "build",
-            "detail": "Task to build executable for hybrid CP-ABE (legacy)."
-        },
-        {
-            "type": "shell",
-            "label": "Clean build artifacts",
+            "label": "3. Build static library (.lib)",
             "command": "cmd",
             "args": [
                 "/c",
-                "del /Q ${workspaceFolder}\\*.obj ${workspaceFolder}\\*.exe ${workspaceFolder}\\*.dll ${workspaceFolder}\\*.lib ${workspaceFolder}\\*.pdb ${workspaceFolder}\\*.ilk ${workspaceFolder}\\*.exp 2>nul || echo Clean complete"
+                "echo Compiling... && cl.exe /MD /GS /O2 /Zi /EHsc /c \"${workspaceFolder}\\hybrid-cp-abe.cpp\" /I\"${workspaceFolder}\\include\" /Fo:\"${workspaceFolder}\\hybrid-cp-abe.obj\" && echo Archiving... && lib.exe /OUT:\"${workspaceFolder}\\lib\\static\\libhybrid-cp-abe.lib\" \"${workspaceFolder}\\hybrid-cp-abe.obj\" /LIBPATH:\"${workspaceFolder}\\lib\\static\" librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib && echo Cleaning up... && del /Q \"${workspaceFolder}\\hybrid-cp-abe.obj\" && echo Done! Output at lib\\static\\libhybrid-cp-abe.lib"
             ],
             "problemMatcher": [],
-            "group": "build",
-            "detail": "Remove build artifacts (.obj, .exe, .dll, .lib, .pdb)"
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build static library (libhybrid-cp-abe.lib) and clean up temporary .obj files"
         }
     ]
 }

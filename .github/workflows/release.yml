@@ -22,7 +22,7 @@ env:
 
 jobs:
   build-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       contents: write
     
@@ -145,6 +145,7 @@ jobs:
             - The decryption process ensures that only users with the correct attribute-based keys can retrieve the AES encryption key and decrypt the data.
 
             ## Changes in This Release
+            - Support buffer encryption/decryption.
             - Now supports Linux!
             - New name: Hybrid CP-ABE.
             - Support large input files.

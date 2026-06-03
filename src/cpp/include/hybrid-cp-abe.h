@@ -18,8 +18,8 @@
 #define LIB_API
 #endif
 #else
-// Với các hệ điều hành khác không cần định nghĩa đặc biệt
-#define LIB_API
+// Với các hệ điều hành khác (Linux/macOS) xuất khẩu hàm công khai
+#define LIB_API __attribute__((visibility("default")))
 #endif
 
 // ============================================================================
@@ -29,7 +29,7 @@ namespace HybridCPABE {
     constexpr size_t GCM_IV_SIZE = 12;          // 96-bit theo NIST SP 800-38D
     constexpr size_t AES_KEY_SIZE = 32;         // 256-bit AES key
     constexpr uint8_t FORMAT_VERSION = 0x01;    // Ciphertext format version
-    const char* const LIB_VERSION = "3.0.0";
+    const char* const LIB_VERSION = "3.1.0";
     const char* const DEFAULT_KEY_FORMAT = "Base64";
 }
 
