@@ -1,0 +1,53 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "1. Build executable (.exe)",
+            "command": "g++",
+            "args": [
+                "-O2", "-g", "-Wall",
+                "-I${workspaceFolder}/include",
+                "${file}",
+                "-o", "${fileDirname}/${fileBasenameNoExtension}",
+                "-L${workspaceFolder}/lib/static",
+                "-lhybrid-cp-abe"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Compile currently open file and link with libhybrid-cp-abe.a"
+        },
+        {
+            "type": "shell",
+            "label": "2. Build shared library (.so)",
+            "command": "g++",
+            "args": [
+                "-O2", "-g", "-Wall", "-fPIC", "-DBUILD_DLL",
+                "-I${workspaceFolder}/include",
+                "${workspaceFolder}/hybrid-cp-abe.cpp",
+                "-shared",
+                "-o", "${workspaceFolder}/lib/dynamic/libhybrid-cp-abe.so",
+                "${workspaceFolder}/lib/static/libcryptopp.a",
+                "${workspaceFolder}/lib/static/librabe_ffi.a"
+            ],
+            "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Build shared library (libhybrid-cp-abe.so)"
+        },
+        {
+            "type": "shell",
+            "label": "3. Build static library (.a)",
+            "command": "bash",
+            "args": [
+                "-c",
+                "echo 'Compiling...' && g++ -O2 -g -Wall -c \"${workspaceFolder}/hybrid-cp-abe.cpp\" -I\"${workspaceFolder}/include\" -fPIC -o \"${workspaceFolder}/hybrid-cp-abe.o\" && echo 'Extracting dependencies...' && rm -rf \"${workspaceFolder}/tmp_extracted\" && mkdir -p \"${workspaceFolder}/tmp_extracted\" && cd \"${workspaceFolder}/lib/static\" && ar x libcryptopp.a && ar x librabe_ffi.a && mv *.o \"${workspaceFolder}/tmp_extracted/\" && echo 'Archiving...' && ar rcs \"${workspaceFolder}/lib/static/libhybrid-cp-abe.a\" \"${workspaceFolder}/hybrid-cp-abe.o\" \"${workspaceFolder}/tmp_extracted/\"*.o && echo 'Cleaning up...' && rm -rf \"${workspaceFolder}/tmp_extracted\" \"${workspaceFolder}/hybrid-cp-abe.o\" && echo 'Done! Output at lib/static/libhybrid-cp-abe.a'"
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build static library (libhybrid-cp-abe.a) and clean up temporary .o files"
+        }
+    ]
+}
