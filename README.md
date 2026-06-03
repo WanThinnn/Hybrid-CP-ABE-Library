@@ -30,7 +30,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
     "tasks": [
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build executable",
+            "label": "Build Hybrid CP-ABE CLI Executable",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -38,8 +38,9 @@ _Using x64 Native Tools Command Prompt for VS 2022_
                 "/O2",
                 "/Zi",
                 "/EHsc",
-                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "${file}",
+                "/Fe:${workspaceFolder}\\hybrid-cp-abe.exe",
+                "${workspaceFolder}\\hybrid-cp-abe.cpp",
+                "${workspaceFolder}\\main.cpp",
                 "/I${workspaceFolder}\\include",
                 "/link",
                 "/LIBPATH:${workspaceFolder}\\lib\\static",
@@ -54,12 +55,87 @@ _Using x64 Native Tools Command Prompt for VS 2022_
             "problemMatcher": [
                 "$msCompile"
             ],
-            "group": "build",
-            "detail": "Task to build executable."
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build CLI executable from hybrid-cp-abe.cpp + main.cpp"
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build executable for hybrid CP-ABE",
+            "label": "Build Hybrid CP-ABE Static Library (.lib)",
+            "command": "cmd",
+            "args": [
+                "/c",
+                "cl.exe /MD /GS /O2 /Zi /EHsc /c ${workspaceFolder}\\hybrid-cp-abe.cpp /I${workspaceFolder}\\include /Fo:${workspaceFolder}\\hybrid-cp-abe.obj && lib.exe /OUT:${workspaceFolder}\\libhybrid-cp-abe.lib ${workspaceFolder}\\hybrid-cp-abe.obj /LIBPATH:${workspaceFolder}\\lib\\static librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib"
+            ],
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build",
+            "detail": "Build static library from hybrid-cp-abe.cpp only (no main.cpp)"
+        },
+        {
+            "type": "shell",
+            "label": "Build Hybrid CP-ABE DLL",
+            "command": "cl.exe",
+            "args": [
+                "/MD",
+                "/GS",
+                "/O2",
+                "/Zi",
+                "/EHsc",
+                "/LD",
+                "/DBUILD_DLL",
+                "/Fe:${workspaceFolder}\\hybrid-cp-abe.dll",
+                "${workspaceFolder}\\hybrid-cp-abe.cpp",
+                "/I${workspaceFolder}\\include",
+                "/link",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
+                "librabe_ffi.lib",
+                "cryptlib.lib",
+                "bcrypt.lib",
+                "advapi32.lib",
+                "ntdll.lib",
+                "/MACHINE:X64"
+            ],
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build",
+            "detail": "Build DLL from hybrid-cp-abe.cpp only (no main.cpp)"
+        },
+        {
+            "type": "shell",
+            "label": "C/C++: cl.exe build single file executable",
+            "command": "cl.exe",
+            "args": [
+                "/MD",
+                "/GS",
+                "/O2",
+                "/Zi",
+                "/EHsc",
+                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "${file}",
+                "/I${workspaceFolder}\\include",
+                "/link",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
+                "librabe_ffi.lib",
+                "bcrypt.lib",
+                "advapi32.lib",
+                "ntdll.lib",
+                "Ws2_32.lib",
+                "/MACHINE:X64"
+            ],
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build",
+            "detail": "Build single file as executable (for testing)"
+        },
+        {
+            "type": "shell",
+            "label": "C/C++: cl.exe build executable for hybrid CP-ABE (legacy)",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -79,88 +155,20 @@ _Using x64 Native Tools Command Prompt for VS 2022_
                 "$msCompile"
             ],
             "group": "build",
-            "detail": "Task to build executable for hybrid CP-ABE."
+            "detail": "Task to build executable for hybrid CP-ABE (legacy)."
         },
         {
             "type": "shell",
-            "label": "C/C++: cl.exe build static library for hybrid CP-ABE",
-            "command": "cl.exe",
+            "label": "Clean build artifacts",
+            "command": "cmd",
             "args": [
-                "/MD",
-                "/GS",
-                "/O2",
-                "/Zi",
-                "/EHsc",
                 "/c",
-                "${file}",
-                "/I${workspaceFolder}\\include"
+                "del /Q ${workspaceFolder}\\*.obj ${workspaceFolder}\\*.exe ${workspaceFolder}\\*.dll ${workspaceFolder}\\*.lib ${workspaceFolder}\\*.pdb ${workspaceFolder}\\*.ilk ${workspaceFolder}\\*.exp 2>nul || echo Clean complete"
             ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Task to build static library for hybrid CP-ABE."
-        },
-        {
-            "type": "shell",
-            "label": "C/C++: lib.exe create static library for hybrid CP-ABE",
-            "command": "lib.exe",
-            "args": [
-                "/OUT:${fileDirname}\\${fileBasenameNoExtension}.lib",
-                "${fileDirname}\\${fileBasenameNoExtension}.obj",
-                "/LIBPATH:${workspaceFolder}\\lib\\static",
-                "librabe_ffi.lib",
-                "cryptlib.lib",
-                "bcrypt.lib",
-                "advapi32.lib",
-                "ntdll.lib"
-            ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "Task to create static library."
-        },
-        {
-            "type": "shell",
-            "label": "C/C++: cl.exe build dynamic linking library (DLL) for hybrid CP-ABE",
-            "command": "cl.exe",
-            "args": [
-                "/MD",
-                "/GS",
-                "/O2",
-                "/Zi",
-                "/EHsc",
-                "/LD",
-                "/DBUILD_DLL",
-                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.dll",
-                "${file}",
-                "/I${workspaceFolder}\\include",
-                "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static",
-                "librabe_ffi.lib",
-                "cryptlib.lib",
-                "bcrypt.lib",
-                "advapi32.lib",
-                "ntdll.lib",
-                "/MACHINE:X64"
-            ],
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "C/C++: cl.exe build dynamic linking library (DLL) for hybrid CP-ABE"
-        },
-       
+            "problemMatcher": [],
+            "group": "build",
+            "detail": "Remove build artifacts (.obj, .exe, .dll, .lib, .pdb)"
+        }
     ]
 }
 ```
@@ -190,116 +198,54 @@ _Using x64 Native Tools Command Prompt for VS 2022_
     "tasks": [
         {
             "type": "shell",
-            "label": "Build executable (cryptopp/rabe_ffi)",
+            "label": "1. Build executable (.exe)",
             "command": "g++",
             "args": [
-                "-O3",
-                "-g2",
-                "-Wall",
+                "-O2", "-g", "-Wall",
                 "-I${workspaceFolder}/include",
                 "${file}",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}",
-                "-L${workspaceFolder}/lib/static",
-                "-lcryptopp",
-                "-lrabe_ffi"
-            ],
-            "problemMatcher": ["$gcc"],
-            "group": "build",
-            "detail": "Build executable linking cryptopp and rabe_ffi."
-        },
-        {
-            "type": "shell",
-            "label": "Build executable (hybrid CP-ABE)",
-            "command": "g++",
-            "args": [
-                "-O2",
-                "-g",
-                "-Wall",
-                "-I${workspaceFolder}/include",
-                "${file}",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}",
+                "-o", "${fileDirname}/${fileBasenameNoExtension}",
                 "-L${workspaceFolder}/lib/static",
                 "-lhybrid-cp-abe"
             ],
             "problemMatcher": ["$gcc"],
             "group": "build",
-            "detail": "Build executable linking fat library libhybrid-cp-abe.a."
+            "detail": "Compile currently open file and link with libhybrid-cp-abe.a"
         },
         {
             "type": "shell",
-            "label": "Compile source for hybrid CP-ABE (1/3)",
+            "label": "2. Build shared library (.so)",
             "command": "g++",
             "args": [
-                "-O2",
-                "-g",
-                "-Wall",
-                "-c",
-                "${file}",
+                "-O2", "-g", "-Wall", "-fPIC", "-DBUILD_DLL",
                 "-I${workspaceFolder}/include",
-                "-fPIC",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}.o"
+                "${workspaceFolder}/hybrid-cp-abe.cpp",
+                "-shared",
+                "-o", "${workspaceFolder}/lib/dynamic/libhybrid-cp-abe.so",
+                "${workspaceFolder}/lib/static/libcryptopp.a",
+                "${workspaceFolder}/lib/static/librabe_ffi.a"
             ],
             "problemMatcher": ["$gcc"],
+            "group": "build",
+            "detail": "Build shared library (libhybrid-cp-abe.so)"
+        },
+        {
+            "type": "shell",
+            "label": "3. Build static library (.a)",
+            "command": "bash",
+            "args": [
+                "-c",
+                "echo 'Compiling...' && g++ -O2 -g -Wall -c \"${workspaceFolder}/hybrid-cp-abe.cpp\" -I\"${workspaceFolder}/include\" -fPIC -o \"${workspaceFolder}/hybrid-cp-abe.o\" && echo 'Extracting dependencies...' && rm -rf \"${workspaceFolder}/tmp_extracted\" && mkdir -p \"${workspaceFolder}/tmp_extracted\" && cd \"${workspaceFolder}/lib/static\" && ar x libcryptopp.a && ar x librabe_ffi.a && mv *.o \"${workspaceFolder}/tmp_extracted/\" && echo 'Archiving...' && ar rcs \"${workspaceFolder}/lib/static/libhybrid-cp-abe.a\" \"${workspaceFolder}/hybrid-cp-abe.o\" \"${workspaceFolder}/tmp_extracted/\"*.o && echo 'Cleaning up...' && rm -rf \"${workspaceFolder}/tmp_extracted\" \"${workspaceFolder}/hybrid-cp-abe.o\" && echo 'Done! Output at lib/static/libhybrid-cp-abe.a'"
+            ],
+            "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "Compile source into object file."
-        },
-        {
-            "type": "shell",
-            "label": "Extract dependency objects (2/3)",
-            "command": "bash",
-            "args": [
-                "-c",
-                "rm -rf \"${workspaceFolder}/tmp_extracted\" && mkdir -p \"${workspaceFolder}/tmp_extracted\" && cd \"${workspaceFolder}/lib/static\" && ar x libcryptopp.a && ar x librabe_ffi.a && mv *.o \"${workspaceFolder}/tmp_extracted/\""
-            ],
-            "problemMatcher": [],
-            "group": "build",
-            "detail": "Extract .o files from libcryptopp.a and librabe_ffi.a."
-        },
-        {
-            "type": "shell",
-            "label": "Create fat static library for hybrid CP-ABE (3/3)",
-            "command": "bash",
-            "args": [
-                "-c",
-                "ar rcs \"${workspaceFolder}/lib/static/libhybrid-cp-abe.a\" \"${fileDirname}/${fileBasenameNoExtension}.o\" \"${workspaceFolder}/tmp_extracted/\"*.o && rm -rf \"${workspaceFolder}/tmp_extracted\""
-            ],
-            "problemMatcher": ["$gcc"],
-            "group": "build",
-            "detail": "Combine object files into libhybrid-cp-abe.a."
-        },
-        {
-            "type": "shell",
-            "label": "Build shared library for hybrid CP-ABE",
-            "command": "g++",
-            "args": [
-                "-O2",
-                "-g",
-                "-Wall",
-                "-fPIC",
-                "-DBUILD_DLL",
-                "-I${workspaceFolder}/include",
-                "${file}",
-                "-shared",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}.so",
-                "-L${workspaceFolder}/lib/static",
-                "-lhybrid-cp-abe",
-                "-lcryptopp",
-                "-lrabe_ffi"
-            ],
-            "problemMatcher": ["$gcc"],
-            "group": "build",
-            "detail": "Build shared library (.so) for hybrid CP-ABE."
+            "detail": "Build static library (libhybrid-cp-abe.a) and clean up temporary .o files"
         }
     ]
 }
-
 ```
 4. Build the project:
     - Open Visual Studio Code and open your project.
