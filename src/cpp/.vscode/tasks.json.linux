@@ -101,10 +101,8 @@
                 "-shared",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}.so",
-                "-L${workspaceFolder}/lib/static",
-                "-lhybrid-cp-abe",
-                "-lcryptopp",
-                "-lrabe_ffi"
+                "${workspaceFolder}/lib/static/libcryptopp.a",
+                "${workspaceFolder}/lib/static/librabe_ffi.a"
             ],
             "problemMatcher": ["$gcc"],
             "group": "build",

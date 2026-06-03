@@ -2,14 +2,25 @@ import ctypes
 from ctypes import c_char_p
 import sys
 import os
+import platform
 
-# Đường dẫn đến thư viện .dll (same directory as this script)
+# Đường dẫn đến thư viện (same directory as this script)
 script_dir = os.path.dirname(os.path.abspath(__file__))
-lib_path = os.path.join(script_dir, "hybrid-cp-abe.dll")
+
+# Chọn tên thư viện dựa trên hệ điều hành
+system = platform.system()
+if system == "Windows":
+    lib_name = "hybrid-cp-abe.dll"
+elif system == "Darwin":
+    lib_name = "libhybrid-cp-abe.dylib" # hoặc "hybrid-cp-abe.dylib" tùy cách build
+else:
+    lib_name = "libhybrid-cp-abe.so"    # hoặc "hybrid-cp-abe.so" tùy cách build
+
+lib_path = os.path.join(script_dir, lib_name)
 
 if not os.path.exists(lib_path):
-    print(f"Error: DLL not found at {lib_path}")
-    print(f"   Make sure hybrid-cp-abe.dll is in the same directory as this script.")
+    print(f"Error: Library not found at {lib_path}")
+    print(f"   Make sure {lib_name} is in the same directory as this script.")
     sys.exit(1)
 
 # Tải thư viện .dylib/.so
