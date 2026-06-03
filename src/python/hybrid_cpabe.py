@@ -1,5 +1,5 @@
 import ctypes
-from ctypes import c_char_p
+from ctypes import c_char_p, POINTER, c_ubyte, c_size_t, byref
 import sys
 import os
 import platform
@@ -10,7 +10,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 # Chọn tên thư viện dựa trên hệ điều hành
 system = platform.system()
 if system == "Windows":
-    lib_name = "hybrid-cp-abe.dll"
+    lib_name = "libhybrid-cp-abe.dll"
 elif system == "Darwin":
     lib_name = "libhybrid-cp-abe.dylib" # hoặc "hybrid-cp-abe.dylib" tùy cách build
 else:
@@ -44,6 +44,27 @@ abe_lib.getVersion.restype = c_char_p
 
 abe_lib.getErrorMessage.argtypes = [ctypes.c_int]
 abe_lib.getErrorMessage.restype = c_char_p
+
+# Ctypes types for buffers
+c_ubyte_p = POINTER(c_ubyte)
+
+abe_lib.hybrid_cpabe_encryptBuffer.argtypes = [
+    c_ubyte_p, c_size_t, # publicKey, pkLen
+    c_ubyte_p, c_size_t, # plaintext, ptLen
+    c_char_p,            # policy
+    POINTER(c_ubyte_p), POINTER(c_size_t) # ciphertext, ctLen
+]
+abe_lib.hybrid_cpabe_encryptBuffer.restype = ctypes.c_int
+
+abe_lib.hybrid_cpabe_decryptBuffer.argtypes = [
+    c_ubyte_p, c_size_t, # privateKey, skLen
+    c_ubyte_p, c_size_t, # ciphertext, ctLen
+    POINTER(c_ubyte_p), POINTER(c_size_t) # plaintext, ptLen
+]
+abe_lib.hybrid_cpabe_decryptBuffer.restype = ctypes.c_int
+
+abe_lib.freeBuffer.argtypes = [c_ubyte_p]
+abe_lib.freeBuffer.restype = None
 
 # Error codes
 HCPABE_SUCCESS = 0
@@ -106,6 +127,51 @@ def call_hybrid_cpabe_decrypt(private_key_file, ciphertext_file, recovertext_fil
         print(f"Decryption failed: {error_msg} (code: {result})")
     return result
 
+def call_hybrid_cpabe_encryptBuffer(public_key: bytes, plaintext: bytes, policy: str) -> bytes:
+    pk_arr = (c_ubyte * len(public_key)).from_buffer_copy(public_key)
+    pt_arr = (c_ubyte * len(plaintext)).from_buffer_copy(plaintext)
+    
+    ct_ptr = c_ubyte_p()
+    ct_len = c_size_t(0)
+    
+    result = abe_lib.hybrid_cpabe_encryptBuffer(
+        pk_arr, len(public_key),
+        pt_arr, len(plaintext),
+        policy.encode('utf-8'),
+        byref(ct_ptr), byref(ct_len)
+    )
+    
+    if result == HCPABE_SUCCESS:
+        ct_bytes = bytes(ct_ptr[:ct_len.value])
+        abe_lib.freeBuffer(ct_ptr)
+        return ct_bytes
+    else:
+        error_msg = abe_lib.getErrorMessage(result).decode('utf-8')
+        raise RuntimeError(f"Buffer encryption failed: {error_msg} (code: {result})")
+
+def call_hybrid_cpabe_decryptBuffer(private_key: bytes, ciphertext: bytes) -> bytes:
+    sk_arr = (c_ubyte * len(private_key)).from_buffer_copy(private_key)
+    ct_arr = (c_ubyte * len(ciphertext)).from_buffer_copy(ciphertext)
+    
+    pt_ptr = c_ubyte_p()
+    pt_len = c_size_t(0)
+    
+    result = abe_lib.hybrid_cpabe_decryptBuffer(
+        sk_arr, len(private_key),
+        ct_arr, len(ciphertext),
+        byref(pt_ptr), byref(pt_len)
+    )
+    
+    if result == HCPABE_SUCCESS:
+        pt_bytes = bytes(pt_ptr[:pt_len.value])
+        abe_lib.freeBuffer(pt_ptr)
+        return pt_bytes
+    elif result == HCPABE_ERR_POLICY_MISMATCH:
+        raise RuntimeError(f"Buffer decryption failed: Attributes do not satisfy policy")
+    else:
+        error_msg = abe_lib.getErrorMessage(result).decode('utf-8')
+        raise RuntimeError(f"Buffer decryption failed: {error_msg} (code: {result})")
+
 # Main function to handle CLI in Python
 if __name__ == "__main__":
     # Print version info
@@ -118,9 +184,10 @@ if __name__ == "__main__":
         print()
         print("Commands:")
         print("  setup   <path>                          - Generate master & public keys")
-        print("  genkey  <msk> <attrs> <out>             - Generate secret key")
-        print("  encrypt <pk> <file> <policy> <out>      - Encrypt file")
-        print("  decrypt <sk> <file> <out>               - Decrypt file")
+        print("  genkey   <msk> <attrs> <out>            - Generate secret key")
+        print("  encrypt  <pk> <file> <policy> <out>     - Encrypt file")
+        print("  decrypt  <sk> <file> <out>              - Decrypt file")
+        print("  test-buf <pk_file> <sk_file>            - Test buffer encryption")
         print()
         print("Examples:")
         print(f"  python {sys.argv[0]} setup ./keys")
@@ -174,9 +241,39 @@ if __name__ == "__main__":
             result = call_hybrid_cpabe_decrypt(private_key_file, ciphertext_file, recovertext_file)
             sys.exit(0 if result == HCPABE_SUCCESS else 1)
             
+        elif mode == "test-buf":
+            if len(sys.argv) != 4:
+                print(f"Usage: python {sys.argv[0]} test-buf <public_key_file> <private_key_file>")
+                sys.exit(1)
+            
+            with open(sys.argv[2], "rb") as f:
+                pk = f.read()
+            with open(sys.argv[3], "rb") as f:
+                sk = f.read()
+                
+            plaintext = b"Hello, this is a test for Hybrid CP-ABE buffer encryption!"
+            policy = "admin and it"
+            
+            print(f"Original plaintext: {plaintext.decode('utf-8')}")
+            print(f"Policy: {policy}")
+            print("Encrypting buffer...")
+            ct = call_hybrid_cpabe_encryptBuffer(pk, plaintext, policy)
+            print(f"Encrypted! Ciphertext size: {len(ct)} bytes")
+            
+            print("Decrypting buffer...")
+            pt = call_hybrid_cpabe_decryptBuffer(sk, ct)
+            print(f"Recovered plaintext: {pt.decode('utf-8')}")
+            
+            if pt == plaintext:
+                print("Buffer encryption/decryption test PASSED!")
+                sys.exit(0)
+            else:
+                print("Buffer test FAILED!")
+                sys.exit(1)
+            
         else:
             print(f"Invalid command: {mode}")
-            print(f"Valid commands: setup, genkey, encrypt, decrypt")
+            print(f"Valid commands: setup, genkey, encrypt, decrypt, test-buf")
             sys.exit(1)
             
     except Exception as ex:
