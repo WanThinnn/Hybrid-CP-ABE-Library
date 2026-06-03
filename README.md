@@ -31,7 +31,7 @@ _Using x64 Native Tools Command Prompt for VS 2022_
     - If everything is configured correctly, your program will be compiled using `cl.exe`.
 
 
-## Building for Linux (Ubuntu 22.04)
+## Building for Linux (Ubuntu >= 22.04)
 1. Clone the repository:
     ```sh
     https://github.com/WanThinnn/Hybrid-CP-ABE-Library.git
