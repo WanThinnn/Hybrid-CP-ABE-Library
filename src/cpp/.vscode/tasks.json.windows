@@ -36,27 +36,10 @@
             "type": "shell",
             "label": "2. Build shared library (.dll)",
             "dependsOn": "3. Build static library (.lib)",
-            "command": "cl.exe",
+            "command": "cmd",
             "args": [
-                "/MD",
-                "/GS",
-                "/O2",
-                "/Zi",
-                "/EHsc",
-                "/utf-8",
-                "/LD",
-                "/DBUILD_DLL",
-                "/Fe:${workspaceFolder}\\lib\\dynamic\\libhybrid-cp-abe.dll",
-                "${workspaceFolder}\\hybrid-cp-abe.cpp",
-                "/I${workspaceFolder}\\include",
-                "/link",
-                "/LIBPATH:${workspaceFolder}\\lib\\static",
-                "librabe_ffi.lib",
-                "cryptlib.lib",
-                "bcrypt.lib",
-                "advapi32.lib",
-                "ntdll.lib",
-                "/MACHINE:X64"
+                "/c",
+                "cl.exe /MD /GS /O2 /Zi /EHsc /utf-8 /LD /DBUILD_DLL /Fe:\"${workspaceFolder}\\lib\\dynamic\\libhybrid-cp-abe.dll\" \"${workspaceFolder}\\hybrid-cp-abe.cpp\" /I\"${workspaceFolder}\\include\" /link /LIBPATH:\"${workspaceFolder}\\lib\\static\" librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib /MACHINE:X64 && echo Cleaning up Import Library and Export File... && del /Q \"${workspaceFolder}\\lib\\dynamic\\libhybrid-cp-abe.lib\" \"${workspaceFolder}\\lib\\dynamic\\libhybrid-cp-abe.exp\""
             ],
             "problemMatcher": [
                 "$msCompile"
