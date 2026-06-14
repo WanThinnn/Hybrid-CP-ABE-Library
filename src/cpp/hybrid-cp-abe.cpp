@@ -8,6 +8,7 @@
 #include <cryptopp/sha.h>
 #include <cryptopp/sha3.h>
 #include <cryptopp/files.h>
+#include <sys/stat.h>
 
 #include <iostream>
 #include <fstream>
@@ -20,7 +21,7 @@
 #include <cstring>
 
 #include "rabe/rabe.h"
-#include "hybrid-cp-abe.h"
+#include "hybrid-pq-cp-abe.h"
 
 // ============================================================================
 // Secure Memory Wipe
@@ -240,10 +241,24 @@ int setup(const char *path)
         {
             throw std::runtime_error("Failed to convert master key or public key to JSON.");
         }
+
+        std::string mskPath, pkPath;
+        struct stat info;
+        if (stat(strPath.c_str(), &info) == 0 && (info.st_mode & S_IFDIR)) {
+            mskPath = strPath + "/cpabe_msk.key";
+            pkPath = strPath + "/cpabe_pk.key";
+        } else if (strPath.empty() || strPath.back() == '/' || strPath.back() == '\\') {
+            mskPath = strPath + "cpabe_msk.key";
+            pkPath = strPath + "cpabe_pk.key";
+        } else {
+            mskPath = strPath + "_msk.key";
+            pkPath = strPath + "_pk.key";
+        }
+
         if (strFileFormat == "JsonText" || strFileFormat == "HEX" || strFileFormat == "Base64")
         {
-            bool masterKeySaved = SaveFile(strPath + "/cpabe_msk.key", masterKeyJson, strFileFormat);
-            bool publicKeySaved = SaveFile(strPath + "/cpabe_pk.key", publicKeyJson, strFileFormat);
+            bool masterKeySaved = SaveFile(mskPath, masterKeyJson, strFileFormat);
+            bool publicKeySaved = SaveFile(pkPath, publicKeyJson, strFileFormat);
             
             rabe_free_json(masterKeyJson);
             rabe_free_json(publicKeyJson);
@@ -617,10 +632,7 @@ int hybrid_cpabe_encryptBuffer(
 
         // Parse public key from buffer (JSON string)
         std::string pkStr(reinterpret_cast<const char*>(publicKey), pkLen);
-        std::string decodedPkStr;
-        CryptoPP::StringSource ss(pkStr, true,
-            new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedPkStr)));
-        const void *pkObj = rabe_ac17_public_key_from_json(decodedPkStr.c_str());
+        const void *pkObj = rabe_ac17_public_key_from_json(pkStr.c_str());
         if (!pkObj)
             return HCPABE_ERR_INVALID_KEY;
 
@@ -738,12 +750,9 @@ int hybrid_cpabe_decryptBuffer(
         offset += lenEncryptedKey;
         std::string aesCiphertext = decodedCiphertext.substr(offset);
 
-        // Load private key
+        // Load private key (JSON string)
         std::string skStr(reinterpret_cast<const char*>(privateKey), skLen);
-        std::string decodedSkStr;
-        CryptoPP::StringSource ss(skStr, true,
-            new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedSkStr)));
-        const void *secretKey = rabe_cp_ac17_secret_key_from_json(decodedSkStr.c_str());
+        const void *secretKey = rabe_cp_ac17_secret_key_from_json(skStr.c_str());
         if (!secretKey)
             return HCPABE_ERR_INVALID_KEY;
 
