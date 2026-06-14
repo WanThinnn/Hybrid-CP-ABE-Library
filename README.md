@@ -26,7 +26,7 @@ When benchmarked against the standard Python-based `charm-crypto` library using 
 
 > **Note:** The minor trade-off for this extreme decryption speed is a slightly slower encryption phase for very complex policies (due to the Rust `pest` parser generating the abstract syntax tree), but the massive decryption gains (nearly 10x faster) make it exceptionally well-suited for scalable real-world systems.
 
-> **Disclaimer (Scope of Library):** This library is highly specialized and **only supports the AC17 CP-ABE scheme**. It is built specifically to achieve maximum performance and seamless C++ integration for this single algorithm. If your project requires a broader variety of cryptographic schemes (such as KP-ABE, IBE, signatures, etc.), we highly recommend using [Charm-crypto](https://github.com/JHUISI/charm), which offers a vast and flexible collection of cryptographic primitives.
+> **Disclaimer (Scope of Library):** This library is highly specialized and **only supports the AC17 CP-ABE scheme**. It is built specifically to achieve maximum performance and seamless C++ integration for this single algorithm. If your project requires a broader variety of cryptographic schemes (such as KP-ABE, IBE, signatures, etc.), we highly recommend using [Charm-Crypto](https://github.com/JHUISI/charm), which offers a vast and flexible collection of cryptographic primitives.
 
 ## Building for Windows
 
