@@ -31,11 +31,11 @@ out/
 *.res
 
 # Executables / libraries
-*.exe
-*.dll
-*.lib
-*.so
-*.a
+# *.exe
+# *.dll
+# *.lib
+# *.so
+# *.a
 
 ########################################
 # Visual Studio user-specific files
