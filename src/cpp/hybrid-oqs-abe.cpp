@@ -1,4 +1,4 @@
-#include "hybrid-cp-abe.h"
+#include "hybrid-pq-cp-abe.h"
 #include "rabe/rabe.h"
 #include <oqs/oqs.h>
 #include <cryptopp/cryptlib.h>

@@ -21,7 +21,7 @@
 #include <cstring>
 
 #include "rabe/rabe.h"
-#include "hybrid-cp-abe.h"
+#include "hybrid-pq-cp-abe.h"
 
 // ============================================================================
 // Secure Memory Wipe
