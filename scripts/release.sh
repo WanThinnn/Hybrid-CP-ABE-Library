@@ -119,7 +119,8 @@ if git diff --cached --quiet; then
     echo -e "${GREEN}No changes to commit${NC}"
 else
     git commit -m "chore: bump version to ${VERSION}"
-    git push origin main
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    git push origin "$CURRENT_BRANCH"
 fi
 
 # Step 6: Create and push new tag
@@ -140,17 +141,17 @@ echo -e "  - Build library packages for:"
 echo ""
 echo -e "Package contents:"
 echo -e "  ${YELLOW}lib/${NC}"
-[ "$BUILD_WIN" = true ] && echo -e "    - libhybrid-cp-abe.dll  (dynamic library)"
-[ "$BUILD_WIN" = true ] && echo -e "    - libhybrid-cp-abe.lib  (static library)"
-[ "$BUILD_LINUX" = true ] && echo -e "    - libhybrid-cp-abe.so   (shared library)"
-[ "$BUILD_LINUX" = true ] && echo -e "    - libhybrid-cp-abe.a    (static library)"
+[ "$BUILD_WIN" = true ] && echo -e "    - libhybrid-pq-cp-abe.dll  (dynamic library)"
+[ "$BUILD_WIN" = true ] && echo -e "    - libhybrid-pq-cp-abe.lib  (static library)"
+[ "$BUILD_LINUX" = true ] && echo -e "    - libhybrid-pq-cp-abe.so   (shared library)"
+[ "$BUILD_LINUX" = true ] && echo -e "    - libhybrid-pq-cp-abe.a    (static library)"
 echo -e "  ${YELLOW}include/${NC}"
-echo -e "    - hybrid-cp-abe.h"
+echo -e "    - hybrid-pq-cp-abe.h"
 echo -e "    - rabe/"
 echo -e "      - rabe.h"
 echo ""
 echo -e "Release artifacts:"
-[ "$BUILD_WIN" = true ] && echo -e "  - libhybrid-cp-abe_win_x86_64_v${VERSION}.zip"
-[ "$BUILD_LINUX" = true ] && echo -e "  - libhybrid-cp-abe_linux_x86_64_v${VERSION}.zip"
+[ "$BUILD_WIN" = true ] && echo -e "  - libhybrid-pq-cp-abe_win_x86_64_v${VERSION}.zip"
+[ "$BUILD_LINUX" = true ] && echo -e "  - libhybrid-pq-cp-abe_linux_x86_64_v${VERSION}.zip"
 echo ""
 echo -e "Check progress at: ${BLUE}https://github.com/WanThinnn/Hybrid-CP-ABE-Library/actions${NC}"

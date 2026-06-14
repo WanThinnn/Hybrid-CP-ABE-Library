@@ -18,7 +18,7 @@ on:
         default: true
 
 env:
-  LIB_NAME: libhybrid-cp-abe
+  LIB_NAME: libhybrid-pq-cp-abe
 
 jobs:
   build-release:
@@ -71,12 +71,12 @@ jobs:
           mkdir -p "${PACKAGE_NAME}/lib"
           
           # Copy header files
-          cp src/cpp/include/hybrid-cp-abe.h "${PACKAGE_NAME}/include/"
+          cp src/cpp/include/hybrid-pq-cp-abe.h "${PACKAGE_NAME}/include/"
           cp -r src/cpp/include/rabe "${PACKAGE_NAME}/include/"
           
-          # Copy ONLY libhybrid-cp-abe libraries for Linux
-          cp src/cpp/lib/dynamic/libhybrid-cp-abe.so "${PACKAGE_NAME}/lib/" 2>/dev/null || true
-          cp src/cpp/lib/static/libhybrid-cp-abe.a "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          # Copy ONLY libhybrid-pq-cp-abe libraries for Linux
+          cp src/cpp/lib/dynamic/libhybrid-pq-cp-abe.so "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          cp src/cpp/lib/static/libhybrid-pq-cp-abe.a "${PACKAGE_NAME}/lib/" 2>/dev/null || true
           
           # Create zip
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
@@ -98,12 +98,12 @@ jobs:
           mkdir -p "${PACKAGE_NAME}/lib"
           
           # Copy header files
-          cp src/cpp/include/hybrid-cp-abe.h "${PACKAGE_NAME}/include/"
+          cp src/cpp/include/hybrid-pq-cp-abe.h "${PACKAGE_NAME}/include/"
           cp -r src/cpp/include/rabe "${PACKAGE_NAME}/include/"
           
-          # Copy ONLY libhybrid-cp-abe libraries for Windows
-          cp src/cpp/lib/dynamic/libhybrid-cp-abe.dll "${PACKAGE_NAME}/lib/" 2>/dev/null || true
-          cp src/cpp/lib/static/libhybrid-cp-abe.lib "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          # Copy ONLY libhybrid-pq-cp-abe libraries for Windows
+          cp src/cpp/lib/dynamic/libhybrid-pq-cp-abe.dll "${PACKAGE_NAME}/lib/" 2>/dev/null || true
+          cp src/cpp/lib/static/libhybrid-pq-cp-abe.lib "${PACKAGE_NAME}/lib/" 2>/dev/null || true
           
           # Create zip
           zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
@@ -124,35 +124,30 @@ jobs:
             ${{ env.LIB_NAME }}_win_x86_64_v${{ steps.config.outputs.version }}.zip
           fail_on_unmatched_files: false
           body: |
-            # Hybrid CP-ABE Library for Windows/Linux - Version ${{ steps.config.outputs.version }}
+            # Hybrid PQ-CP-ABE Library for Windows/Linux - Version ${{ steps.config.outputs.version }}
 
             ## Overview
-            - This release introduces an updated implementation of the CP-ABE AC17 (Ciphertext Policy Attribute-Based Encryption) scheme, now integrated with the AES-GCM-256 symmetric encryption algorithm. 
-            - The main objective of this update is to combine the flexible access control of CP-ABE with the high-performance encryption of AES-GCM-256, providing a more secure and efficient solution for data encryption.
+            - This release introduces an updated implementation of the CP-ABE AC17 (Ciphertext Policy Attribute-Based Encryption) scheme, now integrated with the AES-GCM-256 symmetric encryption algorithm AND **ML-DSA-87 Post-Quantum Signatures**. 
+            - The main objective of this update is to combine the flexible access control of CP-ABE with the high-performance encryption of AES-GCM-256, and protect data integrity/authentication against quantum adversaries using `liboqs`.
 
             ## Key Features
             
-            ### Hybrid Encryption:
-            - We use the CP-ABE AC17 scheme to encrypt a very big random symmetric key, which is then used SHA3-256 to hash it for 256-bits AES key.
-            - This approach leverages the access control mechanism of CP-ABE for key management and the high-speed, secure data encryption provided by AES-GCM-256.
+            ### Post-Quantum Hybrid Encryption:
+            - Seamlessly append `--pqc` to the CLI to encrypt data with AES-GCM, manage access with CP-ABE, and sign the ciphertext using quantum-safe ML-DSA-87 signatures.
+            - Prevents tampering and ensures sender authenticity even against future quantum computers.
 
             ### Optimized Performance:
             - The AES-GCM-256 encryption ensures fast and secure encryption of large data files.
             - The AC17 scheme allows for more flexible encryption policies and fine-grained control over who can access the encrypted content.
 
-            ### Secure Encryption & Decryption:
-            - Encrypted data is protected by both the strength of AES-GCM-256 and the attribute-based access control of CP-ABE.
-            - The decryption process ensures that only users with the correct attribute-based keys can retrieve the AES encryption key and decrypt the data.
+            ### Ultimate Multi-OS Build:
+            - A unified `tasks.json` automatically detects the OS and builds seamlessly on Windows (MSVC) or Linux (g++).
 
             ## Changes in This Release
-            - Support buffer encryption/decryption.
-            - Now supports Linux!
-            - New name: Hybrid CP-ABE.
-            - Support large input files.
-            - The source code is now more secure.
-            - Added full support for hybrid encryption: combining CP-ABE AC17 and AES-GCM-256 for enhanced security and efficiency.
-            - Improved error handling and debug information to help identify issues during encryption and decryption processes.
-            - Code refactoring to separate CP-ABE encrypted keys and AES-GCM encrypted data, ensuring proper decryption in various environments.
+            - Added **Post-Quantum Signatures** (ML-DSA-87 via `liboqs`).
+            - Unified executable `main` supporting both standard mode and `--pqc` mode.
+            - Renamed library to `libhybrid-pq-cp-abe` to reflect the new architecture.
+            - Removed legacy CLI arguments and improved parsing.
 
             ## Download
             - **Linux**: `${{ env.LIB_NAME }}_linux_x86_64_v${{ steps.config.outputs.version }}.zip`
