@@ -7,6 +7,26 @@ Hybrid Ciphertext Policy Attribute Based Encryption Library for C/C++ in Windows
 - [CP-ABE AC17 Scheme](https://eprint.iacr.org/2017/807)
 - [Rabe-ffi](https://github.com/Aya0wind/Rabe-ffi)
 
+## Why Use This Library? (Performance & Benchmarks)
+
+This library implements a highly optimized **KEM/DEM Hybrid Encryption architecture** combining the advanced access control of CP-ABE (using `rabe` & Rust) with the blazing-fast symmetric encryption of AES-GCM (using `CryptoPP` & C++). 
+
+When benchmarked against the standard Python-based `charm-crypto` library using the AC17 scheme, this library demonstrates massive performance advantages, especially during decryption:
+
+*   **Lightning-fast Decryption (O(1) Decryption Time):** Thanks to Rust's intelligent Minimum Satisfying Subset evaluation and optimized multi-pairing techniques, the decryption time is almost constant regardless of how complex the policy is. While `charm-crypto` scales linearly and takes >200ms for complex policies (12 attributes), this custom library completes decryption in a flat **~23ms**.
+*   **Hardware-accelerated AES-GCM (AES-NI):** By using `CryptoPP` for the Data Encapsulation Mechanism (DEM) phase, the actual file data is encrypted and decrypted in less than 1 millisecond.
+*   **Zero Python Interpreter Overhead:** Being a pre-compiled native library (C++/Rust FFI), it eliminates the heavy overhead of the Python interpreter and Python object conversions, making it ideal for integration into high-performance backends, embedded systems, or mobile applications.
+
+### Benchmark Results (Complex Policy - 12 Attributes)
+<p align="center">
+  <img src="benchmark/image/benchmark_chart.png" alt="Benchmark Chart" width="800"/>
+  <br/>
+  <img src="benchmark/image/encrypt_decrypt_focus_chart.png" alt="Encrypt/Decrypt Focus Chart" width="800"/>
+</p>
+
+> **Note:** The minor trade-off for this extreme decryption speed is a slightly slower encryption phase for very complex policies (due to the Rust `pest` parser generating the abstract syntax tree), but the massive decryption gains (nearly 10x faster) make it exceptionally well-suited for scalable real-world systems.
+
+> **Disclaimer (Scope of Library):** This library is highly specialized and **only supports the AC17 CP-ABE scheme**. It is built specifically to achieve maximum performance and seamless C++ integration for this single algorithm. If your project requires a broader variety of cryptographic schemes (such as KP-ABE, IBE, signatures, etc.), we highly recommend using [Charm-crypto](https://github.com/JHUISI/charm), which offers a vast and flexible collection of cryptographic primitives.
 
 ## Building for Windows
 
