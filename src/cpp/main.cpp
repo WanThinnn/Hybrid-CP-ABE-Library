@@ -9,6 +9,8 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <cryptopp/base64.h>
+#include <cryptopp/filters.h>
 
 #include "hybrid-cp-abe.h"
 
@@ -21,14 +23,21 @@ void printUsage(const char* programName)
     std::cout << "  setup   <path>                           - Generate master key and public key" << std::endl;
     std::cout << "  genkey  <master_key> <attrs> <out_file>  - Generate private key from attributes" << std::endl;
     std::cout << "  encrypt <pub_key> <file> <policy> <out>  - Encrypt file with access policy" << std::endl;
-    std::cout << "  decrypt <priv_key> <file> <out>         - Decrypt file" << std::endl;
+    std::cout << "  decrypt <priv_key> <file> <out>          - Decrypt file" << std::endl;
+    std::cout << "  encrypt_buffer <pub_key> <text> <policy> <out> - Encrypt text string to file" << std::endl;
+    std::cout << "  decrypt_buffer <priv_key> <file>               - Decrypt file to stdout" << std::endl;
     std::cout << std::endl;
     std::cout << "Examples:" << std::endl;
     std::cout << "  " << programName << " setup ./keys" << std::endl;
     std::cout << "  " << programName << " genkey ./keys/cpabe_msk.key \"admin it\" ./keys/user.key" << std::endl;
     std::cout << "  " << programName << " encrypt ./keys/cpabe_pk.key data.txt \"\\\"admin\\\" and \\\"it\\\"\" data.enc" << std::endl;
     std::cout << "  " << programName << " decrypt ./keys/user.key data.enc data.dec" << std::endl;
+    std::cout << "  " << programName << " encrypt_buffer ./keys/cpabe_pk.key \"Secret Message\" \"\\\"admin\\\"\" secret.enc" << std::endl;
+    std::cout << "  " << programName << " decrypt_buffer ./keys/user.key secret.enc" << std::endl;
 }
+
+#include <fstream>
+#include <sstream>
 
 int main(int argc, char *argv[])
 {
@@ -94,6 +103,72 @@ int main(int argc, char *argv[])
                 return 1;
             }
             result = hybrid_cpabe_decrypt(argv[2], argv[3], argv[4]);
+        }
+        else if (mode == "encrypt_buffer")
+        {
+            if (argc < 6)
+            {
+                std::cerr << "Usage: " << argv[0] << " encrypt_buffer <public_key_file> <text_string> <policy> <ciphertext_file>" << std::endl;
+                return 1;
+            }
+            
+            // Read PK
+            std::ifstream pkFile(argv[2], std::ios::binary);
+            if (!pkFile) { std::cerr << "Cannot open public key file." << std::endl; return 1; }
+            std::string pkStr((std::istreambuf_iterator<char>(pkFile)), std::istreambuf_iterator<char>());
+            pkFile.close();
+            
+            std::string decodedPkStr;
+            CryptoPP::StringSource(pkStr, true, new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedPkStr)));
+            
+            std::string ptStr = argv[3];
+            unsigned char* ct = nullptr;
+            size_t ctLen = 0;
+            
+            result = hybrid_cpabe_encryptBuffer((const unsigned char*)decodedPkStr.data(), decodedPkStr.size(), 
+                                                (const unsigned char*)ptStr.data(), ptStr.size(), 
+                                                argv[4], &ct, &ctLen);
+            if (result == HCPABE_SUCCESS) {
+                std::ofstream outFile(argv[5], std::ios::binary);
+                outFile.write((char*)ct, ctLen);
+                outFile.close();
+                freeBuffer(ct);
+            }
+        }
+        else if (mode == "decrypt_buffer")
+        {
+            if (argc < 4)
+            {
+                std::cerr << "Usage: " << argv[0] << " decrypt_buffer <private_key_file> <ciphertext_file>" << std::endl;
+                return 1;
+            }
+            
+            // Read SK
+            std::ifstream skFile(argv[2], std::ios::binary);
+            if (!skFile) { std::cerr << "Cannot open private key file." << std::endl; return 1; }
+            std::string skStr((std::istreambuf_iterator<char>(skFile)), std::istreambuf_iterator<char>());
+            skFile.close();
+            
+            std::string decodedSkStr;
+            CryptoPP::StringSource(skStr, true, new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedSkStr)));
+            
+            // Read CT
+            std::ifstream ctFile(argv[3], std::ios::binary);
+            if (!ctFile) { std::cerr << "Cannot open ciphertext file." << std::endl; return 1; }
+            std::string ctStr((std::istreambuf_iterator<char>(ctFile)), std::istreambuf_iterator<char>());
+            ctFile.close();
+            
+            unsigned char* pt = nullptr;
+            size_t ptLen = 0;
+            
+            result = hybrid_cpabe_decryptBuffer((const unsigned char*)decodedSkStr.data(), decodedSkStr.size(), 
+                                                (const unsigned char*)ctStr.data(), ctStr.size(), 
+                                                &pt, &ptLen);
+            if (result == HCPABE_SUCCESS) {
+                std::string ptOut((char*)pt, ptLen);
+                std::cout << "Decrypted Buffer: " << ptOut << std::endl;
+                freeBuffer(pt);
+            }
         }
         else
         {

@@ -4,6 +4,7 @@
         {
             "type": "shell",
             "label": "1. Build executable (.exe)",
+            "dependsOn": "3. Build static library (.a)",
             "command": "g++",
             "args": [
                 "-O2", "-g", "-Wall",
@@ -23,6 +24,7 @@
         {
             "type": "shell",
             "label": "2. Build shared library (.so)",
+            "dependsOn": "3. Build static library (.a)",
             "command": "g++",
             "args": [
                 "-O2", "-g", "-Wall", "-fPIC", "-DBUILD_DLL",

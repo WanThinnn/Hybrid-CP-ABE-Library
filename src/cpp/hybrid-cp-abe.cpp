@@ -617,10 +617,7 @@ int hybrid_cpabe_encryptBuffer(
 
         // Parse public key from buffer (JSON string)
         std::string pkStr(reinterpret_cast<const char*>(publicKey), pkLen);
-        std::string decodedPkStr;
-        CryptoPP::StringSource ss(pkStr, true,
-            new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedPkStr)));
-        const void *pkObj = rabe_ac17_public_key_from_json(decodedPkStr.c_str());
+        const void *pkObj = rabe_ac17_public_key_from_json(pkStr.c_str());
         if (!pkObj)
             return HCPABE_ERR_INVALID_KEY;
 
@@ -738,12 +735,9 @@ int hybrid_cpabe_decryptBuffer(
         offset += lenEncryptedKey;
         std::string aesCiphertext = decodedCiphertext.substr(offset);
 
-        // Load private key
+        // Load private key (JSON string)
         std::string skStr(reinterpret_cast<const char*>(privateKey), skLen);
-        std::string decodedSkStr;
-        CryptoPP::StringSource ss(skStr, true,
-            new CryptoPP::Base64Decoder(new CryptoPP::StringSink(decodedSkStr)));
-        const void *secretKey = rabe_cp_ac17_secret_key_from_json(decodedSkStr.c_str());
+        const void *secretKey = rabe_cp_ac17_secret_key_from_json(skStr.c_str());
         if (!secretKey)
             return HCPABE_ERR_INVALID_KEY;
 

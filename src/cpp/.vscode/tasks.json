@@ -4,53 +4,84 @@
         {
             "type": "shell",
             "label": "1. Build executable (.exe)",
-            "command": "g++",
+            "dependsOn": "3. Build static library (.lib)",
+            "command": "cl.exe",
             "args": [
-                "-O2", "-g", "-Wall",
-                "-I${workspaceFolder}/include",
-                "${file}",
-                "-o", "${fileDirname}/${fileBasenameNoExtension}",
-                "-L${workspaceFolder}/lib/static",
-                "-lhybrid-cp-abe",
-                "-lrabe_ffi",
-                "-lcryptopp",
-                "-lpthread"
+                "/MD",
+                "/GS",
+                "/O2",
+                "/Zi",
+                "/EHsc",
+                "/utf-8",
+                "/Fe:${workspaceFolder}\\oqs_main.exe",
+                "${workspaceFolder}\\oqs_main.cpp",
+                "/I${workspaceFolder}\\include",
+                "/link",
+                "/ignore:4099",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
+                "libhybrid-cp-abe.lib",
+                "liboqs.lib",
+                "bcrypt.lib",
+                "advapi32.lib",
+                "ntdll.lib",
+                "Ws2_32.lib",
+                "/MACHINE:X64"
             ],
-            "problemMatcher": ["$gcc"],
+            "problemMatcher": [
+                "$msCompile"
+            ],
             "group": "build",
-            "detail": "Compile currently open file and link with libhybrid-cp-abe.a"
+            "detail": "Compile currently open file and link with libhybrid-cp-abe.lib"
         },
         {
             "type": "shell",
-            "label": "2. Build shared library (.so)",
-            "command": "g++",
+            "label": "2. Build shared library (.dll)",
+            "dependsOn": "3. Build static library (.lib)",
+            "command": "cl.exe",
             "args": [
-                "-O2", "-g", "-Wall", "-fPIC", "-DBUILD_DLL",
-                "-I${workspaceFolder}/include",
-                "${workspaceFolder}/hybrid-cp-abe.cpp",
-                "-shared",
-                "-o", "${workspaceFolder}/lib/dynamic/libhybrid-cp-abe.so",
-                "${workspaceFolder}/lib/static/libcryptopp.a",
-                "${workspaceFolder}/lib/static/librabe_ffi.a"
+                "/MD",
+                "/GS",
+                "/O2",
+                "/Zi",
+                "/EHsc",
+                "/utf-8",
+                "/LD",
+                "/DBUILD_DLL",
+                "/Fe:${workspaceFolder}\\lib\\dynamic\\libhybrid-cp-abe.dll",
+                "${workspaceFolder}\\hybrid-cp-abe.cpp",
+                "${workspaceFolder}\\hybrid-oqs-abe.cpp",
+                "/I${workspaceFolder}\\include",
+                "/link",
+                "/ignore:4099",
+                "/LIBPATH:${workspaceFolder}\\lib\\static",
+                "librabe_ffi.lib",
+                "liboqs.lib",
+                "cryptlib.lib",
+                "bcrypt.lib",
+                "advapi32.lib",
+                "ntdll.lib",
+                "/MACHINE:X64"
             ],
-            "problemMatcher": ["$gcc"],
+            "problemMatcher": [
+                "$msCompile"
+            ],
             "group": "build",
-            "detail": "Build shared library (libhybrid-cp-abe.so)"
+            "detail": "Build shared library (libhybrid-cp-abe.dll)"
         },
         {
             "type": "shell",
-            "label": "3. Build static library (.a)",
-            "command": "bash",
+            "label": "3. Build static library (.lib)",
+            "command": "cmd",
             "args": [
-                "-c",
-                "g++ -O2 -g -Wall -c \"${workspaceFolder}/hybrid-cp-abe.cpp\" -I\"${workspaceFolder}/include\" -fPIC -o \"${workspaceFolder}/lib/static/hybrid-cp-abe.o\" && cd \"${workspaceFolder}/lib/static\" && ar rcs libhybrid-cp-abe.a hybrid-cp-abe.o libcryptopp.a librabe_ffi.a && rm -f hybrid-cp-abe.o"
+                "/c",
+                "echo Compiling... && cl.exe /MD /GS /O2 /Zi /EHsc /utf-8 /c \"${workspaceFolder}\\hybrid-cp-abe.cpp\" \"${workspaceFolder}\\hybrid-oqs-abe.cpp\" /I\"${workspaceFolder}\\include\" && echo Archiving... && lib.exe /OUT:\"${workspaceFolder}\\lib\\static\\libhybrid-cp-abe.lib\" \"hybrid-cp-abe.obj\" \"hybrid-oqs-abe.obj\" /LIBPATH:\"${workspaceFolder}\\lib\\static\" librabe_ffi.lib liboqs.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib && echo Cleaning up... && del /Q \"hybrid-cp-abe.obj\" \"hybrid-oqs-abe.obj\" && echo Done! Output at lib\\static\\libhybrid-cp-abe.lib"
             ],
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-               "detail": "Build static library (libhybrid-cp-abe.a) and clean up temporary .o files"
+            "detail": "Build static library (libhybrid-cp-abe.lib) and clean up temporary .obj files"
         }
     ]
 }

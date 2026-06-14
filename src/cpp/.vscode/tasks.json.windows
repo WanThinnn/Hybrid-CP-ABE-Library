@@ -4,6 +4,7 @@
         {
             "type": "shell",
             "label": "1. Build executable (.exe)",
+            "dependsOn": "3. Build static library (.lib)",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -11,10 +12,12 @@
                 "/O2",
                 "/Zi",
                 "/EHsc",
-                "/Fe:${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "${file}",
+                "/utf-8",
+                "/Fe:${workspaceFolder}\\main.exe",
+                "${workspaceFolder}\\main.cpp",
                 "/I${workspaceFolder}\\include",
                 "/link",
+                "/ignore:4099",
                 "/LIBPATH:${workspaceFolder}\\lib\\static",
                 "libhybrid-cp-abe.lib",
                 "bcrypt.lib",
@@ -32,6 +35,7 @@
         {
             "type": "shell",
             "label": "2. Build shared library (.dll)",
+            "dependsOn": "3. Build static library (.lib)",
             "command": "cl.exe",
             "args": [
                 "/MD",
@@ -39,6 +43,7 @@
                 "/O2",
                 "/Zi",
                 "/EHsc",
+                "/utf-8",
                 "/LD",
                 "/DBUILD_DLL",
                 "/Fe:${workspaceFolder}\\lib\\dynamic\\libhybrid-cp-abe.dll",
@@ -65,7 +70,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "echo Compiling... && cl.exe /MD /GS /O2 /Zi /EHsc /c \"${workspaceFolder}\\hybrid-cp-abe.cpp\" /I\"${workspaceFolder}\\include\" /Fo:\"${workspaceFolder}\\hybrid-cp-abe.obj\" && echo Archiving... && lib.exe /OUT:\"${workspaceFolder}\\lib\\static\\libhybrid-cp-abe.lib\" \"${workspaceFolder}\\hybrid-cp-abe.obj\" /LIBPATH:\"${workspaceFolder}\\lib\\static\" librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib && echo Cleaning up... && del /Q \"${workspaceFolder}\\hybrid-cp-abe.obj\" && echo Done! Output at lib\\static\\libhybrid-cp-abe.lib"
+                "echo Compiling... && cl.exe /MD /GS /O2 /Zi /EHsc /utf-8 /c \"${workspaceFolder}\\hybrid-cp-abe.cpp\" /I\"${workspaceFolder}\\include\" && echo Archiving... && lib.exe /OUT:\"${workspaceFolder}\\lib\\static\\libhybrid-cp-abe.lib\" \"hybrid-cp-abe.obj\" /LIBPATH:\"${workspaceFolder}\\lib\\static\" librabe_ffi.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib && echo Cleaning up... && del /Q \"hybrid-cp-abe.obj\" && echo Done! Output at lib\\static\\libhybrid-cp-abe.lib"
             ],
             "problemMatcher": [],
             "group": {

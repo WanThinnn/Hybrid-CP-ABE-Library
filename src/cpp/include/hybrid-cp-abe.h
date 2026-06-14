@@ -45,7 +45,8 @@ typedef enum {
     HCPABE_ERR_INVALID_PARAM = -5,
     HCPABE_ERR_MEMORY = -6,
     HCPABE_ERR_UNSUPPORTED_FORMAT = -7,
-    HCPABE_ERR_VERSION_MISMATCH = -8
+    HCPABE_ERR_VERSION_MISMATCH = -8,
+    HCPABE_ERR_SIGNATURE_INVALID = -9
 } HCPABEError;
 
 // ============================================================================
@@ -55,6 +56,9 @@ extern "C"
 {
     // Khởi tạo hệ thống - tạo Master Key và Public Key
     LIB_API int setup(const char *path);
+    
+    // Khởi tạo hệ thống kèm khóa chữ ký PQC (ML-DSA-87) nhúng vào JSON
+    LIB_API int hybrid_cpabe_setup_with_pqc(const char *path);
     
     // Tạo Private Key từ tập thuộc tính
     // Đã xóa tham số publicKeyFile không sử dụng
@@ -73,6 +77,19 @@ extern "C"
                             const char *ciphertextFile, 
                             const char *recovertextFile);
 
+    // Mã hóa file kèm chữ ký PQC (Sử dụng MSK để ký)
+    LIB_API int hybrid_cpabe_encrypt_and_sign(const char *publicKeyFile, 
+                            const char *masterKeyFile,
+                            const char *plaintextFile, 
+                            const char *policy, 
+                            const char *ciphertextFile);
+    
+    // Giải mã file kèm xác minh chữ ký PQC
+    LIB_API int hybrid_cpabe_decrypt_and_verify(const char *privateKeyFile, 
+                            const char *publicKeyFile,
+                            const char *ciphertextFile, 
+                            const char *recovertextFile);
+
     // ========================================================================
     // Buffer-based Operations (API mới)
     // ========================================================================
@@ -88,6 +105,23 @@ extern "C"
     // Giải mã từ buffer
     LIB_API int hybrid_cpabe_decryptBuffer(
         const unsigned char *privateKey, size_t skLen,
+        const unsigned char *ciphertext, size_t ctLen,
+        unsigned char **plaintext, size_t *ptLen
+    );
+    
+    // Mã hóa từ buffer kèm chữ ký PQC
+    LIB_API int hybrid_cpabe_encryptBuffer_and_sign(
+        const unsigned char *publicKey, size_t pkLen,
+        const unsigned char *masterKey, size_t mskLen,
+        const unsigned char *plaintext, size_t ptLen,
+        const char *policy,
+        unsigned char **ciphertext, size_t *ctLen
+    );
+    
+    // Giải mã từ buffer kèm xác minh chữ ký PQC
+    LIB_API int hybrid_cpabe_decryptBuffer_and_verify(
+        const unsigned char *privateKey, size_t skLen,
+        const unsigned char *publicKey, size_t pkLen,
         const unsigned char *ciphertext, size_t ctLen,
         unsigned char **plaintext, size_t *ptLen
     );
