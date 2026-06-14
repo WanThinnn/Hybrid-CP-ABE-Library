@@ -19,7 +19,7 @@
                 "/link",
                 "/ignore:4099",
                 "/LIBPATH:${workspaceFolder}\\lib\\static",
-                "libhybrid-cp-abe.lib",
+                "libhybrid-oqs-abe.lib",
                 "liboqs.lib",
                 "bcrypt.lib",
                 "advapi32.lib",
@@ -31,7 +31,7 @@
                 "$msCompile"
             ],
             "group": "build",
-            "detail": "Compile currently open file and link with libhybrid-cp-abe.lib"
+            "detail": "Compile currently open file and link with libhybrid-oqs-abe.lib"
         },
         {
             "type": "shell",
@@ -47,7 +47,7 @@
                 "/utf-8",
                 "/LD",
                 "/DBUILD_DLL",
-                "/Fe:${workspaceFolder}\\lib\\dynamic\\libhybrid-cp-abe.dll",
+                "/Fe:${workspaceFolder}\\lib\\dynamic\\libhybrid-oqs-abe.dll",
                 "${workspaceFolder}\\hybrid-cp-abe.cpp",
                 "${workspaceFolder}\\hybrid-oqs-abe.cpp",
                 "/I${workspaceFolder}\\include",
@@ -66,7 +66,7 @@
                 "$msCompile"
             ],
             "group": "build",
-            "detail": "Build shared library (libhybrid-cp-abe.dll)"
+            "detail": "Build shared library (libhybrid-oqs-abe.dll)"
         },
         {
             "type": "shell",
@@ -74,14 +74,14 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "echo Compiling... && cl.exe /MD /GS /O2 /Zi /EHsc /utf-8 /c \"${workspaceFolder}\\hybrid-cp-abe.cpp\" \"${workspaceFolder}\\hybrid-oqs-abe.cpp\" /I\"${workspaceFolder}\\include\" && echo Archiving... && lib.exe /OUT:\"${workspaceFolder}\\lib\\static\\libhybrid-cp-abe.lib\" \"hybrid-cp-abe.obj\" \"hybrid-oqs-abe.obj\" /LIBPATH:\"${workspaceFolder}\\lib\\static\" librabe_ffi.lib liboqs.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib && echo Cleaning up... && del /Q \"hybrid-cp-abe.obj\" \"hybrid-oqs-abe.obj\" && echo Done! Output at lib\\static\\libhybrid-cp-abe.lib"
+                "echo Compiling... && cl.exe /MD /GS /O2 /Zi /EHsc /utf-8 /c \"${workspaceFolder}\\hybrid-cp-abe.cpp\" \"${workspaceFolder}\\hybrid-oqs-abe.cpp\" /I\"${workspaceFolder}\\include\" && echo Archiving... && lib.exe /OUT:\"${workspaceFolder}\\lib\\static\\libhybrid-oqs-abe.lib\" \"hybrid-cp-abe.obj\" \"hybrid-oqs-abe.obj\" /LIBPATH:\"${workspaceFolder}\\lib\\static\" librabe_ffi.lib liboqs.lib cryptlib.lib bcrypt.lib advapi32.lib ntdll.lib && echo Cleaning up... && del /Q \"hybrid-cp-abe.obj\" \"hybrid-oqs-abe.obj\" && echo Done! Output at lib\\static\\libhybrid-oqs-abe.lib"
             ],
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "Build static library (libhybrid-cp-abe.lib) and clean up temporary .obj files"
+            "detail": "Build static library (libhybrid-oqs-abe.lib) and clean up temporary .obj files"
         }
     ]
 }

@@ -11,6 +11,7 @@
 #include <cryptopp/sha.h>
 #include <cryptopp/sha3.h>
 #include <cryptopp/files.h>
+#include <sys/stat.h>
 
 #include <iostream>
 #include <fstream>
@@ -146,10 +147,23 @@ int hybrid_cpabe_setup_with_pqc(const char *path)
         size_t pbLastBrace = pbKeyStr.find_last_of("}");
         if (pbLastBrace != std::string::npos) pbKeyStr.insert(pbLastBrace, ",\"pqc_public_key\":\"" + pqcPubBase64 + "\"");
 
+        std::string mskPath, pkPath;
+        struct stat info;
+        if (stat(strPath.c_str(), &info) == 0 && (info.st_mode & S_IFDIR)) {
+            mskPath = strPath + "/cpabe_msk.key";
+            pkPath = strPath + "/cpabe_pk.key";
+        } else if (strPath.empty() || strPath.back() == '/' || strPath.back() == '\\') {
+            mskPath = strPath + "cpabe_msk.key";
+            pkPath = strPath + "cpabe_pk.key";
+        } else {
+            mskPath = strPath + "_msk.key";
+            pkPath = strPath + "_pk.key";
+        }
+
         if (strFileFormat == "JsonText" || strFileFormat == "HEX" || strFileFormat == "Base64")
         {
-            bool msSaved = SaveFile(strPath + "/cpabe_msk.key", msKeyStr.c_str(), strFileFormat);
-            bool pbSaved = SaveFile(strPath + "/cpabe_pk.key", pbKeyStr.c_str(), strFileFormat);
+            bool msSaved = SaveFile(mskPath, msKeyStr.c_str(), strFileFormat);
+            bool pbSaved = SaveFile(pkPath, pbKeyStr.c_str(), strFileFormat);
             
             rabe_free_json(masterKeyJson);
             rabe_free_json(publicKeyJson);

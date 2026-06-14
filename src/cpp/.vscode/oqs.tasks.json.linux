@@ -9,10 +9,10 @@
             "args": [
                 "-O2", "-g", "-Wall",
                 "-I${workspaceFolder}/include",
-                "${file}",
-                "-o", "${fileDirname}/${fileBasenameNoExtension}",
+                "${workspaceFolder}/oqs_main.cpp",
+                "-o", "${workspaceFolder}/oqs_main",
                 "-L${workspaceFolder}/lib/static",
-                "-lhybrid-cp-abe",
+                "-lhybrid-oqs-abe",
                 "-lrabe_ffi",
                 "-lcryptopp",
                 "-loqs",
@@ -20,7 +20,7 @@
             ],
             "problemMatcher": ["$gcc"],
             "group": "build",
-            "detail": "Compile currently open file and link with libhybrid-cp-abe.a"
+            "detail": "Compile oqs_main.cpp and link with libhybrid-oqs-abe.a"
         },
         {
             "type": "shell",
@@ -33,14 +33,14 @@
                 "${workspaceFolder}/hybrid-cp-abe.cpp",
                 "${workspaceFolder}/hybrid-oqs-abe.cpp",
                 "-shared",
-                "-o", "${workspaceFolder}/lib/dynamic/libhybrid-cp-abe.so",
+                "-o", "${workspaceFolder}/lib/dynamic/libhybrid-oqs-abe.so",
                 "${workspaceFolder}/lib/static/libcryptopp.a",
                 "${workspaceFolder}/lib/static/librabe_ffi.a",
                 "${workspaceFolder}/lib/static/liboqs.a"
             ],
             "problemMatcher": ["$gcc"],
             "group": "build",
-            "detail": "Build shared library (libhybrid-cp-abe.so)"
+            "detail": "Build shared library (libhybrid-oqs-abe.so)"
         },
         {
             "type": "shell",
@@ -48,14 +48,14 @@
             "command": "bash",
             "args": [
                 "-c",
-                "g++ -O2 -g -Wall -c \"${workspaceFolder}/hybrid-cp-abe.cpp\" \"${workspaceFolder}/hybrid-oqs-abe.cpp\" -I\"${workspaceFolder}/include\" -fPIC && cd \"${workspaceFolder}/lib/static\" && ar rcs libhybrid-cp-abe.a \"${workspaceFolder}/hybrid-cp-abe.o\" \"${workspaceFolder}/hybrid-oqs-abe.o\" libcryptopp.a librabe_ffi.a liboqs.a && rm -f \"${workspaceFolder}/hybrid-cp-abe.o\" \"${workspaceFolder}/hybrid-oqs-abe.o\""
+                "g++ -O2 -g -Wall -c \"${workspaceFolder}/hybrid-cp-abe.cpp\" \"${workspaceFolder}/hybrid-oqs-abe.cpp\" -I\"${workspaceFolder}/include\" -fPIC && cd \"${workspaceFolder}/lib/static\" && ar rcs libhybrid-oqs-abe.a \"${workspaceFolder}/hybrid-cp-abe.o\" \"${workspaceFolder}/hybrid-oqs-abe.o\" libcryptopp.a librabe_ffi.a liboqs.a && rm -f \"${workspaceFolder}/hybrid-cp-abe.o\" \"${workspaceFolder}/hybrid-oqs-abe.o\""
             ],
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-               "detail": "Build static library (libhybrid-cp-abe.a) and clean up temporary .o files"
+               "detail": "Build static library (libhybrid-oqs-abe.a) and clean up temporary .o files"
         }
     ]
 }

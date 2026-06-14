@@ -21,7 +21,7 @@ void printUsage(const char* programName)
     std::cout << "Usage: " << programName << " [command] [options]" << std::endl;
     std::cout << std::endl;
     std::cout << "Commands:" << std::endl;
-    std::cout << "  setup   <path>                                       - Generate MSK, PK and PQC keys" << std::endl;
+    std::cout << "  setup   <path_or_prefix>                             - Generate MSK, PK and PQC keys" << std::endl;
     std::cout << "  genkey  <master_key> <attrs> <out_file>              - Generate private key from attributes" << std::endl;
     std::cout << "  encrypt <pub_key> <msk_key> <file> <policy> <out>    - Encrypt and Sign file" << std::endl;
     std::cout << "  decrypt <priv_key> <pub_key> <file> <out>            - Decrypt and Verify file" << std::endl;
@@ -30,6 +30,7 @@ void printUsage(const char* programName)
     std::cout << std::endl;
     std::cout << "Examples:" << std::endl;
     std::cout << "  " << programName << " setup ./keys" << std::endl;
+    std::cout << "  " << programName << " setup ./keys/mykey (generates mykey_msk.key and mykey_pk.key)" << std::endl;
     std::cout << "  " << programName << " genkey ./keys/cpabe_msk.key \"admin it\" ./keys/user.key" << std::endl;
     std::cout << "  " << programName << " encrypt ./keys/cpabe_pk.key ./keys/cpabe_msk.key data.txt \"\\\"admin\\\" and \\\"it\\\"\" data.enc" << std::endl;
     std::cout << "  " << programName << " decrypt ./keys/user.key ./keys/cpabe_pk.key data.enc data.dec" << std::endl;
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
         {
             if (argc < 3)
             {
-                std::cerr << "Usage: " << argv[0] << " setup <path_to_save_keys>" << std::endl;
+                std::cerr << "Usage: " << argv[0] << " setup <path_or_prefix>" << std::endl;
                 return 1;
             }
             result = hybrid_cpabe_setup_with_pqc(argv[2]);

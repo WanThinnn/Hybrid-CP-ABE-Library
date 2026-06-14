@@ -9,8 +9,8 @@
             "args": [
                 "-O2", "-g", "-Wall",
                 "-I${workspaceFolder}/include",
-                "${file}",
-                "-o", "${fileDirname}/${fileBasenameNoExtension}",
+                "${workspaceFolder}/main.cpp",
+                "-o", "${workspaceFolder}/main",
                 "-L${workspaceFolder}/lib/static",
                 "-lhybrid-cp-abe",
                 "-lrabe_ffi",
@@ -19,7 +19,7 @@
             ],
             "problemMatcher": ["$gcc"],
             "group": "build",
-            "detail": "Compile currently open file and link with libhybrid-cp-abe.a"
+            "detail": "Compile main.cpp and link with libhybrid-cp-abe.a"
         },
         {
             "type": "shell",
